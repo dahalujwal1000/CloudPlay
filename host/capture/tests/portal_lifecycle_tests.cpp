@@ -1,8 +1,8 @@
-#include <cloudplay/capture/pipewire_capture.hpp>
-#include <gio/gio.h>
 #include <algorithm>
 #include <atomic>
+#include <cloudplay/capture/pipewire_capture.hpp>
 #include <future>
+#include <gio/gio.h>
 #include <stdexcept>
 #include <string>
 #include <thread>
@@ -29,12 +29,14 @@ class TestPortal final {
             auto *bus = g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, nullptr);
             auto *info = g_dbus_node_info_new_for_xml(xml, nullptr);
             const GDBusInterfaceVTable callbacks{method, nullptr, nullptr, {nullptr}};
-            const auto screen_id = g_dbus_connection_register_object(bus,
-                "/org/freedesktop/portal/desktop", info->interfaces[0], &callbacks, this, nullptr, nullptr);
-            const auto session_id = g_dbus_connection_register_object(bus, session_path,
-                info->interfaces[1], &callbacks, this, nullptr, nullptr);
-            auto *reply = g_dbus_connection_call_sync(bus, "org.freedesktop.DBus", "/org/freedesktop/DBus",
-                "org.freedesktop.DBus", "RequestName", g_variant_new("(su)", "org.freedesktop.portal.Desktop", 0U),
+            const auto screen_id = g_dbus_connection_register_object(
+                bus, "/org/freedesktop/portal/desktop", info->interfaces[0], &callbacks, this,
+                nullptr, nullptr);
+            const auto session_id = g_dbus_connection_register_object(
+                bus, session_path, info->interfaces[1], &callbacks, this, nullptr, nullptr);
+            auto *reply = g_dbus_connection_call_sync(
+                bus, "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
+                "RequestName", g_variant_new("(su)", "org.freedesktop.portal.Desktop", 0U),
                 G_VARIANT_TYPE("(u)"), G_DBUS_CALL_FLAGS_NONE, 5000, nullptr, nullptr);
             if (reply)
                 g_variant_unref(reply);
@@ -56,9 +58,11 @@ class TestPortal final {
         worker_.join();
     }
     std::atomic<unsigned> closes{};
+
   private:
     static void method(GDBusConnection *bus, const gchar *sender, const gchar *, const gchar *,
-        const gchar *name, GVariant *parameters, GDBusMethodInvocation *invocation, gpointer data) {
+                       const gchar *name, GVariant *parameters, GDBusMethodInvocation *invocation,
+                       gpointer data) {
         auto &server = *static_cast<TestPortal *>(data);
         if (std::string_view(name) == "Close") {
             ++server.closes;
@@ -75,10 +79,12 @@ class TestPortal final {
         GVariantBuilder results;
         g_variant_builder_init(&results, G_VARIANT_TYPE_VARDICT);
         if (std::string_view(name) == "CreateSession")
-            g_variant_builder_add(&results, "{sv}", "session_handle", g_variant_new_string(session_path));
+            g_variant_builder_add(&results, "{sv}", "session_handle",
+                                  g_variant_new_string(session_path));
         g_dbus_method_invocation_return_value(invocation, g_variant_new("(o)", path.c_str()));
         const guint code = std::string_view(name) == "Start" ? 1 : 0;
-        g_dbus_connection_emit_signal(bus, sender, path.c_str(), "org.freedesktop.portal.Request", "Response",
+        g_dbus_connection_emit_signal(
+            bus, sender, path.c_str(), "org.freedesktop.portal.Request", "Response",
             g_variant_new("(u@a{sv})", code, g_variant_builder_end(&results)), nullptr);
     }
     GMainLoop *loop_{};
@@ -98,12 +104,14 @@ int main() {
                 capture.start({});
                 throw std::runtime_error("Cancelled portal accepted");
             } catch (const cloudplay::capture::FrameCaptureError &error) {
-                if (error.reason != cloudplay::capture::FrameCaptureFailure::PermissionDenied || error.operation != "Start")
+                if (error.reason != cloudplay::capture::FrameCaptureFailure::PermissionDenied ||
+                    error.operation != "Start")
                     throw std::runtime_error("Wrong portal cancellation diagnostic");
             }
             capture.stop();
             capture.stop();
-            if (server.closes != i + 1 || capture.state() != cloudplay::capture::FrameCaptureState::Stopped)
+            if (server.closes != i + 1 ||
+                capture.state() != cloudplay::capture::FrameCaptureState::Stopped)
                 throw std::runtime_error("Portal session leaked or closed twice");
         }
     }
