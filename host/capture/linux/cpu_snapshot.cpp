@@ -86,7 +86,7 @@ CpuImage read_cpu_snapshot(const CapturedFrame &frame) {
         error("snapshot.fstat", errno);
     if (status.st_size <= 0 || status.st_size > 256 * 1024 * 1024)
         error("snapshot.invalid_allocation_size");
-    const auto size = static_cast<std::size_t>(status.st_size);
+    auto size = static_cast<std::size_t>(status.st_size);
     void *mapped = mmap(nullptr, size, PROT_READ, MAP_SHARED, fd, 0);
     if (mapped == MAP_FAILED)
         error("snapshot.mmap", errno);

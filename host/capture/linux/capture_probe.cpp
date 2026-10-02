@@ -4,6 +4,8 @@
 #include <cloudplay/capture/pipewire_capture.hpp>
 #include <csignal>
 #include <iostream>
+#include <exception>
+#include <string>
 #include <string_view>
 #include <thread>
 
@@ -15,24 +17,49 @@ void interrupt(int) { interrupted = 1; }
 int main(int argc, char **argv) {
     std::cout << std::unitbuf;
     unsigned seconds{30};
+    std::string snapshot_path, reference_path;
     if (argc == 2 && std::string_view(argv[1]) == "--help") {
-        std::cout << "Usage: cloudplay_linux_capture_probe [--seconds 1..120]\n";
+        std::cout << "Usage: cloudplay_linux_capture_probe [--seconds 1..120] "
+                     "[--snapshot new.png [--reference expected.png]]\n";
         return 0;
     }
-    if (argc != 1) {
-        if (argc != 3 || std::string_view(argv[1]) != "--seconds")
+    for (int i = 1; i < argc; i += 2) {
+        if (i + 1 >= argc)
             return 2;
-        const std::string_view duration(argv[2]);
-        const auto [end, error] =
-            std::from_chars(duration.data(), duration.data() + duration.size(), seconds);
-        if (error != std::errc{} || end != duration.data() + duration.size() || seconds < 1 ||
-            seconds > 120)
+        const std::string_view option(argv[i]);
+        const std::string_view value(argv[i + 1]);
+        if (option == "--snapshot" && snapshot_path.empty())
+            snapshot_path = value;
+        else if (option == "--reference" && reference_path.empty())
+            reference_path = value;
+        else if (option == "--seconds") {
+            const auto [end, error] =
+                std::from_chars(value.data(), value.data() + value.size(), seconds);
+            if (error != std::errc{} || end != value.data() + value.size() || seconds < 1 ||
+                seconds > 120)
+                return 2;
+        } else
             return 2;
     }
+    if (!reference_path.empty() && snapshot_path.empty())
+        return 2;
+#ifndef CLOUDPLAY_HAVE_PNG
+    if (!snapshot_path.empty()) {
+        std::cerr << "{\"event\":\"capture.failed\",\"operation\":"
+                     "\"snapshot.libpng_development_dependency_missing\"}\n";
+        return 1;
+    }
+#endif
     std::signal(SIGINT, interrupt);
     std::signal(SIGTERM, interrupt);
     cloudplay::capture::PipeWireCapture capture;
     try {
+        cloudplay::capture::CpuImage reference;
+        if (!reference_path.empty())
+            reference = cloudplay::capture::load_png(reference_path);
+        bool layout_logged{}, snapshot_done{};
+        std::exception_ptr snapshot_error;
+        cloudplay::capture::CpuImage snapshot;
         std::cerr << "Select a 1920x1080 monitor or window in GNOME's sharing dialog.\n";
         capture.start({});
         auto started = std::chrono::steady_clock::now();
@@ -42,11 +69,28 @@ int main(int argc, char **argv) {
         unsigned sample_count{};
         bool first = true;
         while (!interrupted) {
-            const bool delivered = capture.poll([](const auto &frame) {
+            const bool delivered = capture.poll([&](const auto &frame) {
                 if (!frame.native_image || frame.plane_count == 0 || frame.width != 1920 ||
                     frame.height != 1080)
                     throw std::runtime_error("Invalid GPU frame");
+                if (!layout_logged) {
+                    std::cout << "{\"event\":\"capture.format\",\"width\":" << frame.width
+                              << ",\"height\":" << frame.height << ",\"drmFourcc\":"
+                              << frame.drm_format << ",\"modifier\":" << frame.modifier << "}\n";
+                    cloudplay::capture::log_buffer_diagnostics(frame.diagnostics);
+                    layout_logged = true;
+                }
+                if (!snapshot_path.empty() && !snapshot_done && !snapshot_error) {
+                    try {
+                        snapshot = cloudplay::capture::read_cpu_snapshot(frame);
+                        snapshot_done = true;
+                    } catch (...) {
+                        snapshot_error = std::current_exception();
+                    }
+                }
             });
+            if (snapshot_error)
+                std::rethrow_exception(snapshot_error);
             const auto now = std::chrono::steady_clock::now();
             if (first && delivered) {
                 started = sample_start = now;
@@ -54,6 +98,8 @@ int main(int argc, char **argv) {
                 first = false;
             }
             const auto stats = capture.metrics();
+            if (snapshot_done)
+                break;
             const double interval = std::chrono::duration<double>(now - sample_start).count();
             if (!first && interval >= 1.0) {
                 const double fps = static_cast<double>(stats.delivered - sample_frames) / interval;
@@ -73,6 +119,37 @@ int main(int argc, char **argv) {
             std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count();
         capture.stop();
         const auto stats = capture.metrics();
+        if (snapshot_done) {
+            cloudplay::capture::save_png(snapshot, snapshot_path);
+            std::uint64_t mismatched_pixels{};
+            unsigned max_difference{};
+            const bool same_size = reference.width == snapshot.width &&
+                                   reference.height == snapshot.height;
+            if (!reference_path.empty() && same_size) {
+                for (std::size_t i = 0; i < snapshot.rgb.size(); i += 3) {
+                    bool mismatch{};
+                    for (unsigned c = 0; c < 3; ++c) {
+                        const auto difference = static_cast<unsigned>(std::abs(
+                            static_cast<int>(snapshot.rgb[i + c]) - reference.rgb[i + c]));
+                        max_difference = std::max(max_difference, difference);
+                        mismatch = mismatch || difference != 0;
+                    }
+                    mismatched_pixels += mismatch ? 1 : 0;
+                }
+            }
+            const bool exact = !reference_path.empty() && same_size && mismatched_pixels == 0;
+            std::cout << "{\"event\":\"capture.snapshot\",\"saved\":true,\"cpuCopies\":1,"
+                         "\"cpuAccess\":\"DMA_BUF_IOCTL_SYNC START/END READ\","
+                         "\"conversion\":\"packed bytes to RGB; no scaling/rotation\","
+                         "\"referenceProvided\":"
+                      << (!reference_path.empty() ? "true" : "false")
+                      << ",\"sameResolution\":" << (same_size ? "true" : "false")
+                      << ",\"mismatchedPixels\":" << mismatched_pixels
+                      << ",\"maximumChannelDifference\":" << max_difference
+                      << ",\"pixelCorrectVerified\":" << (exact ? "true" : "false")
+                      << ",\"stable1080p60Gpu\":false}\n";
+            return reference_path.empty() || exact ? 0 : 3;
+        }
         const double fps = elapsed > 0 ? static_cast<double>(stats.delivered) / elapsed : 0;
         // Strict capture gate, not encoder/WebRTC acceptance. Static sources may be damage-driven.
         const bool stable = cloudplay::capture::stable_gpu_capture(stats, elapsed, minimum_fps,
@@ -125,6 +202,7 @@ int main(int argc, char **argv) {
     } catch (const cloudplay::capture::FrameCaptureError &error) {
         capture.stop();
         const auto stats = capture.metrics();
+        cloudplay::capture::log_buffer_diagnostics(stats.buffer);
         std::cerr << "{\"event\":\"capture.failed\",\"reason\":" << static_cast<int>(error.reason)
                   << ",\"operation\":\"" << error.operation
                   << "\",\"nativeCode\":" << error.native_code << ",\"width\":" << stats.width
@@ -142,3 +220,5 @@ int main(int argc, char **argv) {
         return 1;
     }
 }
+#include "cpu_snapshot.hpp"
+#include <algorithm>
