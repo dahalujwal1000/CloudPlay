@@ -12,6 +12,7 @@ void interrupt(int) { interrupted = 1; }
 } // namespace
 
 int main(int argc, char **argv) {
+    std::cout << std::unitbuf;
     unsigned seconds{30};
     if (argc == 2 && std::string_view(argv[1]) == "--help") {
         std::cout << "Usage: cloudplay_linux_capture_probe [--seconds 1..120]\n";
@@ -76,7 +77,7 @@ int main(int argc, char **argv) {
         const bool stable = !interrupted && seconds >= 30 && sample_count >= 29 &&
                             minimum_fps >= 58.0 && fps >= 59.0 && stats.discarded == 0 &&
                             stats.sequence_gaps == 0 && stats.delivered == stats.gpu_imports &&
-                            stats.cpu_frames == 0 && stats.latency_samples > 0;
+                            stats.cpu_frames == 0 && stats.presentation_age_samples > 0;
         std::cout << "{\"event\":\"capture.summary\",\"stable1080p60Gpu\":"
                   << (stable ? "true" : "false") << ",\"fps\":" << fps
                   << ",\"minimumIntervalFps\":" << (sample_count ? minimum_fps : 0)
@@ -87,19 +88,35 @@ int main(int argc, char **argv) {
                   << ",\"modifier\":" << stats.modifier << ",\"gpuImports\":" << stats.gpu_imports
                   << ",\"cpuFrames\":" << stats.cpu_frames << ",\"cpuCopies\":" << stats.cpu_copies
                   << ",\"gpuCopies\":" << stats.gpu_copies
-                  << ",\"latencySamples\":" << stats.latency_samples << ",\"meanLatencyMs\":";
+                  << ",\"latencySamples\":" << stats.latency_samples
+                  << ",\"meanNonnegativePresentationAgeMs\":";
         if (stats.latency_samples)
             std::cout << stats.latency_sum_ms / static_cast<double>(stats.latency_samples);
         else
             std::cout << "null";
-        std::cout << ",\"maxLatencyMs\":" << stats.max_latency_ms
+        std::cout << ",\"maxNonnegativePresentationAgeMs\":" << stats.max_latency_ms
+                  << ",\"presentationAgeSamples\":" << stats.presentation_age_samples
+                  << ",\"futureTimestamps\":" << stats.future_timestamps
+                  << ",\"minimumPresentationAgeMs\":" << stats.minimum_presentation_age_ms
+                  << ",\"meanPresentationAgeMs\":";
+        if (stats.presentation_age_samples)
+            std::cout << stats.presentation_age_sum_ms /
+                             static_cast<double>(stats.presentation_age_samples);
+        else
+            std::cout << "null";
+        std::cout << ",\"captureOriginLatencyVerified\":false"
                   << ",\"internalDriverCopies\":null,\"nvencInteropVerified\":false}\n";
         return stable ? 0 : 3;
     } catch (const cloudplay::capture::FrameCaptureError &error) {
         capture.stop();
+        const auto stats = capture.metrics();
         std::cerr << "{\"event\":\"capture.failed\",\"reason\":" << static_cast<int>(error.reason)
                   << ",\"operation\":\"" << error.operation
-                  << "\",\"nativeCode\":" << error.native_code << ",\"stable1080p60Gpu\":false}\n";
+                  << "\",\"nativeCode\":" << error.native_code << ",\"width\":" << stats.width
+                  << ",\"height\":" << stats.height << ",\"drmFourcc\":" << stats.drm_format
+                  << ",\"gpuImports\":" << stats.gpu_imports
+                  << ",\"cpuFrames\":" << stats.cpu_frames << ",\"discarded\":" << stats.discarded
+                  << ",\"stable1080p60Gpu\":false}\n";
         return 1;
     } catch (...) {
         capture.stop();

@@ -96,9 +96,8 @@ struct PipeWireCapture::Impl {
         metrics.height = format.size.height;
         metrics.drm_format = drm_format(format.format);
         metrics.modifier = format.modifier;
-        if (!drm_format(format.format) ||
-            format.size.width != options.width || format.size.height != options.height ||
-            !(format.flags & SPA_VIDEO_FLAG_MODIFIER)) {
+        if (!drm_format(format.format) || format.size.width != options.width ||
+            format.size.height != options.height || !(format.flags & SPA_VIDEO_FLAG_MODIFIER)) {
             fail(FrameCaptureFailure::UnsupportedFormat);
             return;
         }
@@ -194,7 +193,8 @@ struct PipeWireCapture::Impl {
                 const double latency = static_cast<double>(current - header->pts) / 1000000.0;
                 ++metrics.presentation_age_samples;
                 metrics.presentation_age_sum_ms += latency;
-                metrics.minimum_presentation_age_ms = std::min(metrics.minimum_presentation_age_ms, latency);
+                metrics.minimum_presentation_age_ms =
+                    std::min(metrics.minimum_presentation_age_ms, latency);
                 if (latency < 0)
                     ++metrics.future_timestamps;
                 else {
