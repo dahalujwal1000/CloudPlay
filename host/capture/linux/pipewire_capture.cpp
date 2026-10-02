@@ -10,6 +10,7 @@
 #include <mutex>
 #include <optional>
 #include <pipewire/pipewire.h>
+#include <poll.h>
 #include <spa/buffer/meta.h>
 #include <spa/param/video/format-utils.h>
 #include <spa/pod/builder.h>
@@ -98,6 +99,7 @@ struct PipeWireCapture::Impl {
         metrics.height = format.size.height;
         metrics.drm_format = drm_format(format.format);
         metrics.modifier = format.modifier;
+        metrics.buffer.spa_format = static_cast<std::uint32_t>(format.format);
         metrics.negotiated_fps =
             format.framerate.denom
                 ? static_cast<double>(format.framerate.num) / format.framerate.denom
@@ -117,7 +119,7 @@ struct PipeWireCapture::Impl {
         metrics.modifier = format.modifier;
         std::uint8_t storage[1024];
         auto builder = SPA_POD_BUILDER_INIT(storage, sizeof(storage));
-        const spa_pod *params[2];
+        const spa_pod *params[4];
         params[0] = static_cast<spa_pod *>(spa_pod_builder_add_object(
             &builder, SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers, SPA_PARAM_BUFFERS_buffers,
             SPA_POD_CHOICE_RANGE_Int(4, 2, 8), SPA_PARAM_BUFFERS_dataType,
@@ -126,7 +128,15 @@ struct PipeWireCapture::Impl {
             spa_pod_builder_add_object(&builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
                                        SPA_PARAM_META_type, SPA_POD_Id(SPA_META_Header),
                                        SPA_PARAM_META_size, SPA_POD_Int(sizeof(spa_meta_header))));
-        if (pw_stream_update_params(stream, params, 2) < 0)
+        params[2] = static_cast<spa_pod *>(spa_pod_builder_add_object(
+            &builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta, SPA_PARAM_META_type,
+            SPA_POD_Id(SPA_META_VideoCrop), SPA_PARAM_META_size,
+            SPA_POD_Int(sizeof(spa_meta_region))));
+        params[3] = static_cast<spa_pod *>(spa_pod_builder_add_object(
+            &builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta, SPA_PARAM_META_type,
+            SPA_POD_Id(SPA_META_VideoTransform), SPA_PARAM_META_size,
+            SPA_POD_Int(sizeof(spa_meta_videotransform))));
+        if (pw_stream_update_params(stream, params, 4) < 0)
             fail(FrameCaptureFailure::PipeWire);
     }
     void process() {
@@ -154,6 +164,43 @@ struct PipeWireCapture::Impl {
             return;
         }
         auto *buffer = latest->buffer;
+        metrics.buffer = {};
+        metrics.buffer.spa_format = static_cast<std::uint32_t>(format.format);
+        metrics.buffer.plane_count = buffer->n_datas;
+        for (std::uint32_t i = 0; i < std::min(buffer->n_datas, 4U); ++i) {
+            const auto &data = buffer->datas[i];
+            metrics.buffer.memory_types[i] = data.type;
+            metrics.buffer.data_flags[i] = data.flags;
+            metrics.buffer.map_offsets[i] = data.mapoffset;
+            metrics.buffer.max_sizes[i] = data.maxsize;
+            if (data.chunk) {
+                metrics.buffer.chunk_offsets[i] = data.chunk->offset;
+                metrics.buffer.chunk_sizes[i] = data.chunk->size;
+                metrics.buffer.strides[i] = data.chunk->stride;
+            }
+        }
+        if (const auto *crop = static_cast<spa_meta_region *>(
+                spa_buffer_find_meta_data(buffer, SPA_META_VideoCrop, sizeof(spa_meta_region)))) {
+            metrics.buffer.crop_present = true;
+            metrics.buffer.crop_x = crop->region.position.x;
+            metrics.buffer.crop_y = crop->region.position.y;
+            metrics.buffer.crop_width = crop->region.size.width;
+            metrics.buffer.crop_height = crop->region.size.height;
+        }
+        if (const auto *transform = static_cast<spa_meta_videotransform *>(spa_buffer_find_meta_data(
+                buffer, SPA_META_VideoTransform, sizeof(spa_meta_videotransform)))) {
+            metrics.buffer.transform_present = true;
+            metrics.buffer.transform = transform->transform;
+        }
+#ifdef CLOUDPLAY_HAVE_SPA_SYNC_TIMELINE
+        metrics.buffer.explicit_sync_present =
+            spa_buffer_find_meta_data(buffer, SPA_META_SyncTimeline,
+                                      sizeof(spa_meta_sync_timeline)) != nullptr;
+        if (metrics.buffer.explicit_sync_present) {
+            fail(FrameCaptureFailure::UnsupportedFormat);
+            return;
+        }
+#endif
         if (buffer->n_datas < 1 || buffer->n_datas > 4) {
             ++metrics.discarded;
             fail(FrameCaptureFailure::UnsupportedFormat);
@@ -182,7 +229,17 @@ struct PipeWireCapture::Impl {
             }
             frame.planes[i] = {static_cast<int>(plane.fd), plane.mapoffset + plane.chunk->offset,
                                plane.chunk->stride};
+            pollfd fence{static_cast<int>(plane.fd), POLLIN, 0};
+            const auto wait = ::poll(&fence, 1, 1000);
+            if (wait <= 0 || !(fence.revents & POLLIN) ||
+                (fence.revents & (POLLERR | POLLNVAL))) {
+                metrics.native_error = wait < 0 ? errno : 0;
+                fail(wait == 0 ? FrameCaptureFailure::Timeout : FrameCaptureFailure::GpuImport);
+                return;
+            }
         }
+        metrics.buffer.implicit_fences_ready = true;
+        frame.diagnostics = metrics.buffer;
         const auto *header = static_cast<spa_meta_header *>(
             spa_buffer_find_meta_data(buffer, SPA_META_Header, sizeof(spa_meta_header)));
         if (header) {

@@ -34,6 +34,21 @@ struct DmaBufPlane {
     std::int32_t stride{};
 };
 
+struct FrameBufferDiagnostics {
+    std::uint32_t spa_format{};
+    std::uint32_t plane_count{};
+    std::array<std::uint32_t, 4> memory_types{}, data_flags{}, map_offsets{}, chunk_offsets{},
+        chunk_sizes{}, max_sizes{};
+    std::array<std::int32_t, 4> strides{};
+    bool crop_present{};
+    std::int32_t crop_x{}, crop_y{};
+    std::uint32_t crop_width{}, crop_height{};
+    bool transform_present{};
+    std::uint32_t transform{};
+    bool explicit_sync_present{};
+    bool implicit_fences_ready{};
+};
+
 struct CapturedFrame {
     FrameStorage storage{FrameStorage::DmaBuf};
     std::uint32_t width{};
@@ -44,9 +59,11 @@ struct CapturedFrame {
     std::uint32_t plane_count{};
     std::int64_t timestamp_ns{};
     void *native_image{}; // Borrowed EGLImage on Linux; not an NVENC input handle.
+    FrameBufferDiagnostics diagnostics;
 };
 
 struct FrameCaptureMetrics {
+    FrameBufferDiagnostics buffer;
     std::uint64_t received{};
     std::uint64_t delivered{};
     std::uint64_t discarded{};
