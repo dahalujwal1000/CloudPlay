@@ -19,6 +19,8 @@ NVIDIA offers a separate public interface-header archive. SDK interface 13.1.15
 was downloaded from NVIDIA and extracted locally under ignored `.cache/nvidia/`.
 It contains `nvEncodeAPI.h`, `cuviddec.h`, and `nvcuvid.h`, not samples or CUDA.
 No SDK binaries/headers are committed and no driver/system packages were changed.
+The user's `/home/ujwal/Documents/Video_Codec_Interface_13.1.15.zip` was found and
+its SHA-256 matches the official archive used for this setup.
 
 Reproduce from the repository root:
 
@@ -42,6 +44,10 @@ Observed live probe: SDK API 13.1, driver maximum API 13.1, interface ready.
 CTest also uses isolated fake libraries to check old-driver rejection, version
 query failure, interface creation failure, absent functions and missing exports.
 These test libraries live only under the build directory; never install them.
+Local verification passed: 11 SDK-enabled CTest cases, four default CTest cases,
+clang-format 18 and GCC 16 `-fanalyzer`. Linux build/tests and clang-tidy CI also
+passed at revision `b85e460250a03175a33989881a132c8849a075c2` in
+[readiness CI](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37002479151).
 Run without untrusted `LD_LIBRARY_PATH`/`LD_PRELOAD`; never point at SDK stub libraries.
 
 The full [NVIDIA SDK download](https://developer.nvidia.com/video-codec-sdk)

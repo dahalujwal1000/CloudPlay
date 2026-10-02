@@ -169,7 +169,8 @@ implemented foundation contracts and their remaining limitations.
 - Previously reported CPU/RAM: Intel Core i5-13420H, 16 GB RAM. Prior Windows 11
   Build Tools confirmation does not establish any Linux toolkit prerequisites.
 - Android: Android 16.
-- Still unconfirmed: Android model, full SDK archive path and CUDA Toolkit choice.
+- Still unconfirmed: Android model and CUDA Toolkit choice. Full SDK with samples
+  is not installed; the user supplied the interface-header archive instead.
 - Local tools: CMake, Ninja, GCC 16, Node 22.23.1, npm. Isolated Java 17, Gradle 8.13,
   Android SDK platform 36/build-tools 35.0.0, and native format/analyzer tools were
   downloaded under `/tmp` for verification. The default system Java is 25; use 17.
@@ -179,8 +180,10 @@ implemented foundation contracts and their remaining limitations.
 NVIDIA's official interface 13.1.15 archive is extracted under ignored
 `.cache/nvidia/Video_Codec_Interface_13.1.15/Interface`. This is headers only, not
 the full SDK. No CUDA Toolkit/nvcc, Windows SDK or WebRTC SDK is installed here.
-Full NVIDIA SDK download requires the user's login/license acceptance; a request
-for the downloaded ZIP path is pending. Do not request account credentials.
+The supplied `/home/ujwal/Documents/Video_Codec_Interface_13.1.15.zip` exists and
+matches the official interface archive SHA-256 documented in the setup guide.
+It is not the full SDK with samples. Full SDK download requires the user's
+login/license acceptance if samples are needed. Do not request account credentials.
 
 Linux NVIDIA runtime libraries are present. Sandboxed nvidia-smi cannot access
 GPU device nodes; unsandboxed queries and FFmpeg checks succeeded. Do not
@@ -194,3 +197,10 @@ See `docs/testing/linux-nvenc.md` for reproducible commands and limitations.
 The live readiness probe reports SDK/driver API 13.1 and interface ready. Its
 CTest cases exercise CLI handling and isolated fake-driver failure paths, without
 requiring a GPU in CI. Default domain tests still build without NVIDIA headers.
+Local verification: SDK-enabled build and all 11 CTest cases passed; default build
+and four tests passed; clang-format 18 and GCC 16 `-fanalyzer` passed. Linux native
+build/tests and native-quality (including clang-tidy) passed at revision
+`b85e460250a03175a33989881a132c8849a075c2` in
+[readiness CI](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37002479151).
+Other jobs in that run were still in progress when checked; do not infer a full
+run success from those two verified jobs alone.
