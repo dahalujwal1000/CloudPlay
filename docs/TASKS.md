@@ -12,7 +12,10 @@ Linux capture and GPU interoperability. Preserve Windows Graphics Capture → D3
 
 Status: capture module/diagnostic build and tests pass in Windows/Linux CI;
 live Windows GPU acceptance is pending and is no longer the primary development gate.
-Linux capture is not implemented. See [existing Windows capture task](tasks/TASK-002-capture.md).
+Linux portal/PipeWire capture behind IFrameCapture and a GPU-import diagnostic are
+implemented. Live 1920x1080 DMA-BUF/NVIDIA imports work; observed 35-42 FPS does not
+pass sustained 1080p60. See [Linux checks](testing/linux-capture.md) and
+[existing Windows capture task](tasks/TASK-002-capture.md).
 
 ## TASK-003 NVENC
 Implement H.264 hardware encoding and benchmark.
@@ -24,6 +27,9 @@ See [Linux NVIDIA checks](testing/linux-nvenc.md).
 
 ## TASK-004 PC-to-PC WebRTC
 Stream video/audio to a desktop test client.
+
+Gated: do not start integration before stable 1080p60 GPU capture and captured-frame
+NVENC interoperability are verified. The capture acceptance gate has not passed.
 
 ## TASK-005 Android Video
 Receive and render WebRTC video on Android.

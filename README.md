@@ -19,7 +19,8 @@ Linux PC (Fedora first) renders a user-installed game. Android acts as a low-lat
 Linux (planned):
 Game → Linux capture backend → GPU buffer → NVENC → WebRTC
 
-The Linux capture/GPU interoperability decision is pending. Existing Windows
+Linux capture uses GNOME's ScreenCast portal, PipeWire DMA-BUFs and NVIDIA EGL imports.
+Sustained 1080p60 and NVENC interoperability remain pending. Existing Windows
 Graphics Capture/D3D11 code is preserved; see [Linux host decision](docs/decisions/ADR-006-linux-host.md).
 
 Android:
@@ -48,8 +49,10 @@ The native core, Android client scaffold, and authenticated signaling diagnostic
 are verified in CI. A Windows capture module and diagnostic are implemented;
 live Windows hardware acceptance is unverified. Development now targets Linux:
 NVIDIA SDK interface headers and driver readiness diagnostics are set up, with
-H.264/HEVC synthetic hardware tests passing. Linux capture and media streaming
-remain upcoming work. See [Linux NVIDIA setup](docs/testing/linux-nvenc.md).
+H.264/HEVC synthetic hardware tests passing. Linux GPU capture now has a standalone
+diagnostic behind IFrameCapture and lifecycle tests; sustained 1080p60 acceptance
+and media streaming remain pending. See [Linux NVIDIA setup](docs/testing/linux-nvenc.md)
+and [capture checks](docs/testing/linux-capture.md).
 
 See [build instructions](docs/BUILDING.md), the
 [agent handoff](docs/AGENT_HANDOFF.md), and

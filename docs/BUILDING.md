@@ -9,7 +9,10 @@ only. Media transport, pairing, game launch, and input transport are not impleme
 Linux/Fedora is now the primary host target; existing Windows capture is retained.
 For NVIDIA interface-header setup, the optional readiness probe, and live hardware
 checks, see [Linux NVIDIA setup](testing/linux-nvenc.md). The default build still
-requires no NVIDIA SDK and does not implement Linux capture or encoding.
+requires no NVIDIA SDK. The optional Linux backend and standalone diagnostic
+build with `-DCLOUDPLAY_LINUX_CAPTURE=ON`; see [GNOME/Wayland capture](testing/linux-capture.md).
+Stable 1080p60 capture and captured-frame NVENC interoperability remain pending.
+The default executable is still a lifecycle smoke test, not a streaming host.
 
 Install CMake 3.25+, Ninja, and a C++20 compiler. On Windows, use Visual Studio 2022
 Build Tools with Desktop development with C++, then open an x64 Native Tools prompt.

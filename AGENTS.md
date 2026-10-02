@@ -22,7 +22,7 @@ Treat games as ordinary user-installed applications.
 ## Architecture boundaries
 - Host.App: orchestration/lifecycle
 - Host.Core: domain models/state machines/interfaces
-- Host.Capture: platform-specific capture (Linux backend pending; Windows Graphics Capture retained)
+- Host.Capture: Linux ScreenCast portal/PipeWire DMA-BUF capture; Windows Graphics Capture retained
 - Host.Encoder: NVIDIA hardware encoding
 - Host.Streaming: WebRTC media/data transport
 - Host.Input: keyboard/mouse/controller/input mapping
@@ -34,7 +34,7 @@ Treat games as ordinary user-installed applications.
 Android must use equivalent separation.
 
 ## Technology
-Linux: C++20, CMake, NVIDIA Video Codec SDK/NVENC, WebRTC native. Evaluate Wayland desktop portals/PipeWire capture and GPU interoperability before choosing the capture implementation. CUDA UMD is not the CUDA Toolkit.
+Linux: C++20, CMake, Wayland ScreenCast portal/PipeWire, EGL DMA-BUF import, NVIDIA Video Codec SDK/NVENC, WebRTC native. Verify captured-frame NVENC interoperability before encoder integration. CUDA UMD is not the CUDA Toolkit.
 Windows: C++20, CMake, Windows SDK, D3D11, Windows Graphics Capture, WebRTC native, NVIDIA Video Codec SDK.
 Android: Kotlin, Jetpack Compose, WebRTC Android, MediaCodec, Coroutines, StateFlow.
 Signaling: TypeScript, Node.js, Fastify, WebSocket, schema validation.
