@@ -18,7 +18,11 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    lint { warningsAsErrors = true }
+    lint {
+        warningsAsErrors = true
+        // Dependency updates are reviewed deliberately; pinned versions keep builds reproducible.
+        disable += "GradleDependency"
+    }
 }
 kotlin { jvmToolchain(17) }
 dependencies {

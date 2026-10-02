@@ -40,5 +40,13 @@ Touch/controller → input abstraction → WebRTC DataChannel → validated host
 
 See docs/ for detailed specifications.
 
+## Foundation implementation
+The native core, Android client scaffold, and authenticated signaling diagnostics
+are implemented. Capture and streaming remain upcoming tasks.
+
+See [build instructions](docs/BUILDING.md), the
+[agent handoff](docs/AGENT_HANDOFF.md), and
+[foundation acceptance criteria](docs/tasks/TASK-001-foundation.md).
+
 ## Important
 This repository is a development blueprint, not a claim that proprietary game files or services are included.

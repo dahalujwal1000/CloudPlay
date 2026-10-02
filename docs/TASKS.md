@@ -3,6 +3,9 @@
 ## TASK-001 Foundation
 Create repository, CMake, Android project, CI, formatting, linting, test frameworks, config, logging.
 
+Status: implemented foundation scaffolding; final Windows/CI verification pending.
+See [acceptance criteria](tasks/TASK-001-foundation.md) and [agent handoff](AGENT_HANDOFF.md).
+
 ## TASK-002 Windows Capture
 Implement Windows Graphics Capture → D3D11 texture.
 
