@@ -43,7 +43,8 @@ boundaries. Coordinate ownership using `docs/AI_AGENT_WORKFLOW.md`.
 | `docs/decisions/ADR-007-linux-capture.md`, `docs/testing/linux-capture.md` | GPU frame ownership, consent, diagnostics and sustained acceptance gate |
 
 The build exposes `CloudPlay::Core`, `CloudPlay::Telemetry`, and on Windows
-`CloudPlay::Capture`. Other host modules
+`CloudPlay::Capture`; enabling Linux capture adds `CloudPlay::LinuxCapture`.
+Other host modules
 remain planned; no placeholder implementation of hardware or external APIs exists.
 CMake minimum is now 3.25, matching preset schema version 6.
 

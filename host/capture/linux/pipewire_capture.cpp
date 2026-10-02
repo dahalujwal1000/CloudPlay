@@ -194,7 +194,9 @@ struct PipeWireCapture::Impl {
                 ++metrics.presentation_age_samples;
                 metrics.presentation_age_sum_ms += latency;
                 metrics.minimum_presentation_age_ms =
-                    std::min(metrics.minimum_presentation_age_ms, latency);
+                    metrics.presentation_age_samples == 1
+                        ? latency
+                        : std::min(metrics.minimum_presentation_age_ms, latency);
                 if (latency < 0)
                     ++metrics.future_timestamps;
                 else {
