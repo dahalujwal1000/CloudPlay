@@ -27,8 +27,12 @@ Capture, NVENC, WebRTC media, device pairing, live game integration, or input en
 - [x] Authenticated Fastify/WebSocket diagnostics, validation, config, safe logging.
 - [x] Signaling tests, TypeScript checking, ESLint, Prettier pass locally.
 - [x] CI workflow and documentation created; local Git repository initialized.
-- [ ] Windows/MSVC build and tests pass.
-- [ ] GitHub CI workflow executes successfully.
+- [x] Windows/MSVC build and tests pass on hosted Windows CI.
+- [x] GitHub CI workflow executes successfully.
+
+Foundation verified at revision `bd302dd937476f38c2b84e5c64ad370dfc44a1f9`:
+[all five jobs passed](https://github.com/dahalujwal1000/CloudPlay/actions/runs/36999404589).
+Live GPU/device testing remains separate.
 
 ## Tests
 - Native: CTest core lifecycle/recovery/config/logging, smoke, invalid config.

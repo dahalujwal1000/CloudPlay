@@ -1,8 +1,8 @@
 # Building the Foundation
 
-The current host is a command-line lifecycle smoke test. Android is an unpaired
-client shell. Signaling implements authenticated diagnostics only. Capture, media,
-pairing, game launch, and input transport are not implemented yet.
+The default host is a lifecycle smoke test; Windows also builds a capture diagnostic.
+Android is an unpaired client shell. Signaling implements authenticated diagnostics
+only. Media transport, pairing, game launch, and input transport are not implemented.
 
 ## Native Host
 
@@ -26,6 +26,11 @@ build/native/host/cloudplay_host --bitrate-mbps 12
 Defaults: H.264 target, 1920x1080, 60 FPS, 12 Mbps. Configuration validates bitrate
 from 6 through 20 Mbps. No hardware encoder is initialized. Valid execution emits
 four JSON lifecycle records and exits. Invalid arguments exit with code 2.
+
+On Windows, `build/native/host/capture/cloudplay_capture_probe.exe` acquires a window
+as D3D11 textures. See [capture acceptance](testing/capture.md) for commands and the
+manual checklist. Use a recent Windows SDK with C++/WinRT headers. The portable
+frame-policy test runs on Linux; Windows adds capture validation tests.
 
 With clang-format 18 and clang-tidy 18 installed, format/check the `.cpp` and `.hpp`
 files in `host/`. CI checks formatting and analyzes translation units against
@@ -112,4 +117,5 @@ the security and connectivity tasks, TLS, and reviewed session authorization.
 `.github/workflows/foundation.yml` defines Linux/Windows native builds/tests,
 native formatting/analysis, signaling checks, and Android build/test/lint/format
 checks. Workflows run after the repository is hosted on GitHub. They have not been
-executed on GitHub from this workspace. See `docs/AGENT_HANDOFF.md` for local results.
+verified for the foundation on GitHub, including Windows/MSVC. See
+`docs/AGENT_HANDOFF.md` for revision-specific foundation and capture results.
