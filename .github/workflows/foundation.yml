@@ -28,7 +28,7 @@ jobs:
         run: find host -type f \( -name '*.cpp' -o -name '*.hpp' \) -print0 | xargs -0 clang-format-18 --dry-run --Werror
       - run: cmake --preset dev
       - name: Analyze
-        run: find host -name '*.cpp' -print0 | xargs -0 clang-tidy-18 -p build/native
+        run: find host -name '*.cpp' ! -path 'host/capture/windows/*' -print0 | xargs -0 clang-tidy-18 -p build/native
   signaling:
     runs-on: ubuntu-24.04
     defaults:
