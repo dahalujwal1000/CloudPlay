@@ -127,21 +127,22 @@ methods do cleanup. Permission/closure/device-loss failures propagate as typed
 errors and numeric HRESULTs. There is no automatic restart, preview, CPU readback,
 audio, or encoder yet. Read capture architecture docs before integrating NVENC.
 
-Linux policy tests, formatting, and GCC analysis pass. The first Windows build
-caught a missing C++/WinRT Foundation header; it has been corrected, and the capture
-revision is awaiting CI verification. Live texture/resize/minimize/device-loss
-testing has not run. The probe accepts an explicit HWND and duration; see the
-Windows acceptance checklist for the user's next action.
+Linux policy tests, formatting, and GCC analysis pass. The missing C++/WinRT
+Foundation header from the initial Windows build has been corrected. Native
+Linux/Windows and native-quality CI jobs pass for capture revision
+`e3d8fe73a6c765db4c35f7d03fadf44680325405` in
+[this run](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37000958387).
+Live texture/resize/minimize/device-loss testing has not run. The probe accepts an
+explicit HWND and duration; see the Windows checklist for the user's next action.
 
 ## Next Work
 
-1. Confirm the corrected capture revision passes Windows CI.
-2. Run the capture probe/checklist on the user's Windows 11 PC. Record hardware
+1. Run the capture probe/checklist on the user's Windows 11 PC. Record hardware
    results and close TASK-002 only when its acceptance criteria pass.
-3. Continue TASK-003 NVENC, then TASK-004 PC-to-PC WebRTC. Keep media GPU-resident.
-4. Add actual cleanup and metrics as resources are introduced. State reducers alone
+2. Continue TASK-003 NVENC, then TASK-004 PC-to-PC WebRTC. Keep media GPU-resident.
+3. Add actual cleanup and metrics as resources are introduced. State reducers alone
    do not release input, capture, encoder, transport, or game resources.
-5. Define payload schemas and per-session authorization before implementing the
+4. Define payload schemas and per-session authorization before implementing the
    planned signaling messages. Bootstrap authentication is not device pairing.
 
 Pairing, credential storage, game launch, input transport, WebRTC, and NVENC
