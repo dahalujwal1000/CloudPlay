@@ -33,6 +33,11 @@ coverage/
 .kotlin/
 .cache/
 
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
 # OS
 .DS_Store
 Thumbs.db
