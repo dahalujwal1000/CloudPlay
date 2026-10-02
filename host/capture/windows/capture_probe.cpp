@@ -1,6 +1,7 @@
 #include <charconv>
 #include <chrono>
 #include <cloudplay/capture/window_capture.hpp>
+#include <d3d11.h>
 #include <iostream>
 #include <string_view>
 #include <thread>
@@ -41,6 +42,12 @@ int main(int argc, char **argv) {
             capture.poll([](const auto &frame) {
                 if (!frame.texture)
                     throw std::runtime_error("No GPU texture");
+                D3D11_TEXTURE2D_DESC desc{};
+                frame.texture->GetDesc(&desc);
+                if (desc.Width < static_cast<UINT>(frame.content_size.width) ||
+                    desc.Height < static_cast<UINT>(frame.content_size.height) ||
+                    desc.Format != DXGI_FORMAT_B8G8R8A8_UNORM)
+                    throw std::runtime_error("Invalid capture texture");
             });
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }

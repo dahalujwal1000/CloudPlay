@@ -116,6 +116,5 @@ the security and connectivity tasks, TLS, and reviewed session authorization.
 
 `.github/workflows/foundation.yml` defines Linux/Windows native builds/tests,
 native formatting/analysis, signaling checks, and Android build/test/lint/format
-checks. Workflows run after the repository is hosted on GitHub. They have not been
-verified for the foundation on GitHub, including Windows/MSVC. See
+checks. Foundation CI has passed on GitHub, including Windows/MSVC. See
 `docs/AGENT_HANDOFF.md` for revision-specific foundation and capture results.

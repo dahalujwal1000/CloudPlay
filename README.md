@@ -42,7 +42,8 @@ See docs/ for detailed specifications.
 
 ## Foundation implementation
 The native core, Android client scaffold, and authenticated signaling diagnostics
-are implemented. Capture and streaming remain upcoming tasks.
+are verified in CI. A Windows capture module and diagnostic are implemented;
+live hardware acceptance and media streaming remain upcoming work.
 
 See [build instructions](docs/BUILDING.md), the
 [agent handoff](docs/AGENT_HANDOFF.md), and

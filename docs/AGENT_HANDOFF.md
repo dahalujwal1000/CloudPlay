@@ -4,10 +4,10 @@ Last verified: 2026-10-02.
 
 ## Current Status
 
-TASK-001 foundation scaffolding is implemented across the native host, Android, and
-signaling, with CI definitions. Final Windows/MSVC and GitHub CI execution remain
-unverified. Capture, encoding, streaming, and pairing have not been implemented.
-Do not mark TASK-001 fully accepted until its verification gates pass.
+TASK-001 foundation is verified across native host, Android, signaling, and CI,
+including hosted Windows/MSVC build/tests. TASK-002 now has a Windows Graphics
+Capture module and diagnostic; capture revision CI and live GPU acceptance remain
+in progress. Encoding, streaming, and pairing have not been implemented.
 
 Read `AGENTS.md`, `docs/TASKS.md`, the relevant architecture documents, and ADRs
 before continuing. Preserve the game-agnostic design and the existing subsystem
@@ -30,8 +30,11 @@ boundaries. Coordinate ownership using `docs/AI_AGENT_WORKFLOW.md`.
 | `signaling/` | Authenticated loopback HTTP/WebSocket diagnostics, validated config/messages, bounds, logging, tests, lockfile |
 | `.github/workflows/foundation.yml` | Linux/Windows native, native quality, signaling, and Android CI jobs |
 | `docs/BUILDING.md`, `docs/tasks/TASK-001-foundation.md` | Build commands and acceptance criteria |
+| `host/capture/` | Portable frame policy, Windows WGC/D3D11 implementation, diagnostic, validation tests |
+| `docs/architecture/capture.md`, `docs/testing/capture.md` | Capture ownership and hardware acceptance checklist |
 
-The build exposes `CloudPlay::Core` and `CloudPlay::Telemetry`. Other host modules
+The build exposes `CloudPlay::Core`, `CloudPlay::Telemetry`, and on Windows
+`CloudPlay::Capture`. Other host modules
 remain planned; no placeholder implementation of hardware or external APIs exists.
 CMake minimum is now 3.25, matching preset schema version 6.
 
@@ -64,7 +67,8 @@ cmake --build --preset dev
 ctest --preset dev
 ```
 
-All three tests passed: `host.core`, `host.smoke`, and `host.invalid_config`.
+All four current Linux tests passed: `host.core`, `host.smoke`,
+`host.invalid_config`, and `capture.frame_policy`.
 The last test expects a failing exit code for a zero bitrate. The unit executable
 uses a small throwing assertion helper; it does not depend on a third-party test
 framework. These tests do not verify hardware, resource cleanup, or live networking.
@@ -83,8 +87,11 @@ Additional successful local checks:
   checksum is pinned in `gradle-wrapper.properties`.
 
 The clean Android build/test/lint run passed after the final resource/module changes.
-Windows/MSVC and GitHub workflows have not run from this workspace. A local Git
-repository was initialized; this agent did not commit or push. Concurrently added
+Foundation Windows/MSVC and all five GitHub jobs were verified passing at revision
+`bd302dd937476f38c2b84e5c64ad370dfc44a1f9` in
+[this CI run](https://github.com/dahalujwal1000/CloudPlay/actions/runs/36999404589).
+A local Git repository exists; this agent did not manually commit or push. The user's
+autosync tooling commits/pushes changes and triggers CI. Concurrently added
 `scripts/` autosync tooling and `.vscode/` settings are outside this foundation work
 and were not modified or activated by this agent.
 
@@ -109,19 +116,35 @@ read-only StateFlow; orchestration must serialize mutation. UI displays an empty
 device list. Backup/device-transfer exclusions and cleartext denial are configured.
 No emulator/device UI run has been verified.
 
+### Capture Boundary
+
+Windows capture uses a high-performance hardware D3D11 adapter and a two-buffer
+free-threaded WGC pool. The owner polls and lends a GPU texture synchronously;
+no texture reference or unfinished GPU use may outlive that consumer call. It
+drains at most two frames per poll, discards invalid dimensions, and recreates the
+pool on resize. The only OS event handler weakly signals target closure; owner
+methods do cleanup. Permission/closure/device-loss failures propagate as typed
+errors and numeric HRESULTs. There is no automatic restart, preview, CPU readback,
+audio, or encoder yet. Read capture architecture docs before integrating NVENC.
+
+Linux policy tests, formatting, and GCC analysis pass. The first Windows build
+caught a missing C++/WinRT Foundation header; it has been corrected, and the capture
+revision is awaiting CI verification. Live texture/resize/minimize/device-loss
+testing has not run. The probe accepts an explicit HWND and duration; see the
+Windows acceptance checklist for the user's next action.
+
 ## Next Work
 
-1. Run Windows/MSVC build/tests using `docs/BUILDING.md`. Execute the defined GitHub
-   workflow on the user's repo; its remote results have not been inspected here.
-2. Start TASK-002 after foundation verification: Windows Graphics Capture to D3D11
-   textures. Verify official Windows APIs and define callback/resource ownership.
+1. Confirm the corrected capture revision passes Windows CI.
+2. Run the capture probe/checklist on the user's Windows 11 PC. Record hardware
+   results and close TASK-002 only when its acceptance criteria pass.
 3. Continue TASK-003 NVENC, then TASK-004 PC-to-PC WebRTC. Keep media GPU-resident.
 4. Add actual cleanup and metrics as resources are introduced. State reducers alone
    do not release input, capture, encoder, transport, or game resources.
 5. Define payload schemas and per-session authorization before implementing the
    planned signaling messages. Bootstrap authentication is not device pairing.
 
-Pairing, credential storage, game launch, input transport, WebRTC, NVENC, and capture
+Pairing, credential storage, game launch, input transport, WebRTC, and NVENC
 are all future work. State names and failure codes do not imply those features work.
 See `docs/protocols/session-protocol.md` and `docs/protocols/signaling.md` for the
 implemented foundation contracts and their remaining limitations.
@@ -129,9 +152,9 @@ implemented foundation contracts and their remaining limitations.
 ## User Hardware and Open Details
 
 - PC: Windows 11, Intel Core i5-13420H, NVIDIA RTX 3050, 16 GB RAM.
+- The user confirmed C++ Build Tools are installed and they can run the diagnostic.
 - Android: Android 16.
-- Still unconfirmed: exact GPU VRAM/driver, Android model, and
-  whether the user can execute builds on the Windows PC.
+- Still unconfirmed: exact GPU VRAM/driver and Android model.
 - Local tools: CMake, Ninja, GCC 16, Node 22.23.1, npm. Isolated Java 17, Gradle 8.13,
   Android SDK platform 36/build-tools 35.0.0, and native format/analyzer tools were
   downloaded under `/tmp` for verification. The default system Java is 25; use 17.
