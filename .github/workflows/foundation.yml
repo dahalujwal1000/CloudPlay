@@ -1,0 +1,59 @@
+name: Foundation
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+
+jobs:
+  native:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S . -B build/ci -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug
+      - name: Build
+        run: cmake --build build/ci --config Debug
+      - name: Test
+        run: ctest --test-dir build/ci -C Debug --output-on-failure
+  native-quality:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y clang-format-18 clang-tidy-18 ninja-build
+      - name: Format
+        run: find host -type f \( -name '*.cpp' -o -name '*.hpp' \) -print0 | xargs -0 clang-format-18 --dry-run --Werror
+      - run: cmake --preset dev
+      - name: Analyze
+        run: find host -name '*.cpp' -print0 | xargs -0 clang-tidy-18 -p build/native
+  signaling:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: signaling
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: signaling/package-lock.json
+      - run: npm ci
+      - run: npm run check
+  android:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build, Test, Lint, Format
+        run: bash ./gradlew :core:test :app:assembleDebug :app:lintDebug :ui:lintDebug spotlessCheck --no-daemon

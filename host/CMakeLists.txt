@@ -1,0 +1,21 @@
+add_library(cloudplay_core core/src/session.cpp core/src/config.cpp)
+add_library(CloudPlay::Core ALIAS cloudplay_core)
+target_include_directories(cloudplay_core PUBLIC core/include)
+target_link_libraries(cloudplay_core PRIVATE cloudplay_options)
+
+add_library(cloudplay_telemetry telemetry/src/logger.cpp)
+add_library(CloudPlay::Telemetry ALIAS cloudplay_telemetry)
+target_include_directories(cloudplay_telemetry PUBLIC telemetry/include)
+target_link_libraries(cloudplay_telemetry PUBLIC CloudPlay::Core PRIVATE cloudplay_options)
+
+add_executable(cloudplay_host app/main.cpp)
+target_link_libraries(cloudplay_host PRIVATE CloudPlay::Core CloudPlay::Telemetry cloudplay_options)
+
+if(BUILD_TESTING)
+  add_executable(cloudplay_core_tests tests/core_tests.cpp)
+  target_link_libraries(cloudplay_core_tests PRIVATE CloudPlay::Core CloudPlay::Telemetry cloudplay_options)
+  add_test(NAME host.core COMMAND cloudplay_core_tests)
+  add_test(NAME host.smoke COMMAND cloudplay_host)
+  add_test(NAME host.invalid_config COMMAND cloudplay_host --bitrate-mbps 0)
+  set_tests_properties(host.invalid_config PROPERTIES WILL_FAIL TRUE)
+endif()

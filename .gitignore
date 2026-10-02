@@ -1,0 +1,38 @@
+# Build
+build/
+out/
+bin/
+obj/
+.gradle/
+.idea/
+.vscode/
+
+# Android
+*.apk
+*.aab
+local.properties
+
+# Native
+*.obj
+*.lib
+*.dll
+*.exe
+*.pdb
+
+# Secrets
+.env
+*.key
+*.pem
+secrets/
+credentials/
+
+# Tool caches and generated packages
+node_modules/
+dist/
+coverage/
+.kotlin/
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db

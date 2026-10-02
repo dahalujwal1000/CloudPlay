@@ -1,0 +1,37 @@
+# Initial Task Roadmap
+
+## TASK-001 Foundation
+Create repository, CMake, Android project, CI, formatting, linting, test frameworks, config, logging.
+
+## TASK-002 Windows Capture
+Implement Windows Graphics Capture → D3D11 texture.
+
+## TASK-003 NVENC
+Implement H.264 hardware encoding and benchmark.
+
+## TASK-004 PC-to-PC WebRTC
+Stream video/audio to a desktop test client.
+
+## TASK-005 Android Video
+Receive and render WebRTC video on Android.
+
+## TASK-006 Input
+Implement DataChannel input protocol and host validation.
+
+## TASK-007 Touch Controls
+Implement virtual joystick, buttons, camera controls and editable layouts.
+
+## TASK-008 Game Manager
+Implement GameProfile and process lifecycle.
+
+## TASK-009 Pairing
+Implement secure pairing and device identity.
+
+## TASK-010 Internet Connectivity
+Implement signaling, STUN, TURN and reconnect.
+
+## TASK-011 Adaptive Streaming
+Implement bitrate adaptation and telemetry.
+
+## TASK-012 Release Hardening
+Crash handling, installers, diagnostics, compatibility tests, security review and release candidate testing.

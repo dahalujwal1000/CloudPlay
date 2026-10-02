@@ -1,0 +1,36 @@
+#!/bin/sh
+# CloudPlay post-commit hook: push the new commit to the remote.
+#
+# Installed into .git/hooks/post-commit by scripts/install-hooks.sh.
+# Deliberately small and defensive:
+#   * skips while a merge/rebase/cherry-pick/revert/bisect is running
+#   * skips when the autosync daemon is paused (sentinel file present)
+#   * never fails the commit itself (always exits 0)
+
+git_dir=$(git rev-parse --git-dir 2>/dev/null) || exit 0
+
+for marker in rebase-merge rebase-apply MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD BISECT_LOG; do
+    if [ -e "$git_dir/$marker" ]; then
+        echo "[post-commit] $marker in progress; skipping auto-push"
+        exit 0
+    fi
+done
+
+if [ -e "$git_dir/autosync.pause" ]; then
+    echo "[post-commit] autosync paused; skipping auto-push"
+    exit 0
+fi
+
+remote=${CLOUDPLAY_AUTOSYNC_REMOTE:-origin}
+branch=$(git symbolic-ref --short -q HEAD) || {
+    echo "[post-commit] detached HEAD; skipping auto-push"
+    exit 0
+}
+
+if git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1; then
+    git push "$remote" "$branch" || echo "[post-commit] push failed (autosync will retry)"
+else
+    git push -u "$remote" "$branch" || echo "[post-commit] push failed (autosync will retry)"
+fi
+
+exit 0

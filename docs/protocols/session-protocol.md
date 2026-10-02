@@ -1,0 +1,23 @@
+# Session Protocol
+
+Session states:
+- OFFLINE
+- STARTING
+- READY
+- PAIRING
+- CONNECTING
+- CONNECTED
+- STARTING_GAME
+- STREAMING
+- STOPPING
+
+Failures:
+- AUTH_FAILED
+- NETWORK_FAILED
+- GAME_START_FAILED
+- CAPTURE_FAILED
+- ENCODER_FAILED
+- WEBRTC_FAILED
+- INPUT_FAILED
+
+Every transition should have a clear owner and observable event.
