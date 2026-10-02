@@ -1,3 +1,6 @@
-plugins { kotlin("jvm") }
+plugins {
+    kotlin("jvm")
+    `java-library`
+}
 kotlin { jvmToolchain(17) }
-dependencies { implementation(project(":core")) }
+dependencies { api(project(":core")) }
