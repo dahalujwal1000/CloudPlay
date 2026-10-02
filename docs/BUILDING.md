@@ -6,6 +6,11 @@ only. Media transport, pairing, game launch, and input transport are not impleme
 
 ## Native Host
 
+Linux/Fedora is now the primary host target; existing Windows capture is retained.
+For NVIDIA interface-header setup, the optional readiness probe, and live hardware
+checks, see [Linux NVIDIA setup](testing/linux-nvenc.md). The default build still
+requires no NVIDIA SDK and does not implement Linux capture or encoding.
+
 Install CMake 3.25+, Ninja, and a C++20 compiler. On Windows, use Visual Studio 2022
 Build Tools with Desktop development with C++, then open an x64 Native Tools prompt.
 The existing foundation also builds on Linux for domain testing.

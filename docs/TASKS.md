@@ -6,14 +6,21 @@ Create repository, CMake, Android project, CI, formatting, linting, test framewo
 Status: foundation scaffolding verified locally and in Linux/Windows/Android/signaling CI.
 See [acceptance criteria](tasks/TASK-001-foundation.md) and [agent handoff](AGENT_HANDOFF.md).
 
-## TASK-002 Windows Capture
-Implement Windows Graphics Capture → D3D11 texture.
+## TASK-002 Host Capture
+Primary target is now Linux under ADR-006. Choose and implement consent-based
+Linux capture and GPU interoperability. Preserve Windows Graphics Capture → D3D11 texture.
 
 Status: capture module/diagnostic build and tests pass in Windows/Linux CI;
-live GPU acceptance is pending. See [capture task](tasks/TASK-002-capture.md).
+live Windows GPU acceptance is pending and is no longer the primary development gate.
+Linux capture is not implemented. See [existing Windows capture task](tasks/TASK-002-capture.md).
 
 ## TASK-003 NVENC
 Implement H.264 hardware encoding and benchmark.
+
+Status: Linux SDK interface 13.1.15 set up locally; driver API readiness and
+synthetic H.264/HEVC hardware checks pass. AV1 hardware encode is unsupported on
+the tested RTX 3050. Production encoder code has deliberately not started.
+See [Linux NVIDIA checks](testing/linux-nvenc.md).
 
 ## TASK-004 PC-to-PC WebRTC
 Stream video/audio to a desktop test client.

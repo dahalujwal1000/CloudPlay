@@ -3,10 +3,10 @@
 Personal cloud-gaming platform blueprint.
 
 ## Product
-Windows PC renders a user-installed game. Android acts as a low-latency streaming client with touch/controller input.
+Linux PC (Fedora first) renders a user-installed game. Android acts as a low-latency streaming client with touch/controller input. Windows remains a secondary backend.
 
 ## V1 target
-- Windows 11
+- Fedora Linux
 - Android
 - NVIDIA RTX 3050 6 GB class hardware
 - H.264
@@ -16,8 +16,11 @@ Windows PC renders a user-installed game. Android acts as a low-latency streamin
 - Genshin Impact as first game profile
 
 ## Architecture
-Windows:
-Game → Graphics Capture → D3D11 texture → NVENC → WebRTC
+Linux (planned):
+Game → Linux capture backend → GPU buffer → NVENC → WebRTC
+
+The Linux capture/GPU interoperability decision is pending. Existing Windows
+Graphics Capture/D3D11 code is preserved; see [Linux host decision](docs/decisions/ADR-006-linux-host.md).
 
 Android:
 WebRTC → hardware decoder → Surface
@@ -27,7 +30,7 @@ Touch/controller → input abstraction → WebRTC DataChannel → validated host
 
 ## Build order
 1. Foundation/CI
-2. Windows capture
+2. Linux capture and GPU interoperability (Windows capture retained)
 3. NVENC
 4. PC-to-PC WebRTC
 5. Android video
@@ -43,7 +46,10 @@ See docs/ for detailed specifications.
 ## Foundation implementation
 The native core, Android client scaffold, and authenticated signaling diagnostics
 are verified in CI. A Windows capture module and diagnostic are implemented;
-live hardware acceptance and media streaming remain upcoming work.
+live Windows hardware acceptance is unverified. Development now targets Linux:
+NVIDIA SDK interface headers and driver readiness diagnostics are set up, with
+H.264/HEVC synthetic hardware tests passing. Linux capture and media streaming
+remain upcoming work. See [Linux NVIDIA setup](docs/testing/linux-nvenc.md).
 
 See [build instructions](docs/BUILDING.md), the
 [agent handoff](docs/AGENT_HANDOFF.md), and

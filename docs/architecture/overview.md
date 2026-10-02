@@ -6,15 +6,15 @@
                        |
              +---------+---------+
              |                   |
-       WINDOWS HOST        ANDROID CLIENT
+       LINUX HOST          ANDROID CLIENT
              |                   |
        Game Manager          Session Manager
              |                   |
        Game Process             WebRTC
              |                   |
-      Graphics Capture      Hardware Decoder
+      Platform Capture      Hardware Decoder
              |                   |
-        D3D11 Texture        Video Surface
+         GPU Buffer         Video Surface
              |
            NVENC
              |
@@ -24,6 +24,10 @@
 ```
 
 Media should flow peer-to-peer where possible. Signaling exchanges session metadata, SDP and ICE candidates; it should not proxy normal video.
+
+Linux is primary under ADR-006. Linux capture/GPU interoperability is not implemented;
+the retained Windows backend uses WGC/D3D11. Diagram components are architectural
+targets, not a claim of an operational streaming pipeline.
 
 ## Session states
 OFFLINE → STARTING → READY → PAIRING → CONNECTING → CONNECTED → STARTING_GAME → STREAMING → STOPPING → READY

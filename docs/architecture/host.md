@@ -1,4 +1,7 @@
-# Windows Host Architecture
+# Host Architecture
+
+Linux/Fedora is the primary target under ADR-006. Windows remains a secondary
+backend; its implemented capture path is not available on Linux.
 
 ## Modules
 
@@ -9,7 +12,8 @@ Owns application lifecycle and orchestration.
 Pure domain models, interfaces, state machines, and configuration.
 
 ### Host.Capture
-Windows Graphics Capture and D3D11 frame acquisition.
+Platform-specific acquisition. Linux capture and GPU interoperability are pending
+design validation; Windows uses Windows Graphics Capture and D3D11.
 
 ### Host.Encoder
 NVIDIA hardware encoding. Initial codec: H.264.
@@ -32,10 +36,13 @@ Structured logs and session metrics.
 ## Pipeline
 
 Game
-→ Graphics Capture
-→ D3D11 texture
+→ platform capture backend
+→ GPU frame buffer
 → hardware encoder
 → WebRTC RTP
 → network
 
 Avoid unnecessary CPU copies.
+
+Linux SDK/driver readiness is documented in `docs/testing/linux-nvenc.md`.
+No production encoder implementation exists yet.
