@@ -18,7 +18,7 @@ build/linux-capture/host/capture/cloudplay_linux_capture_probe --seconds 30
 Use the normal logged-in GNOME Wayland user, not sudo, SSH, a container or another
 user's bus. Session D-Bus and GPU device access are required. Sandbox IPC/device
 restrictions are distinct from driver failures. Linux capture plus NVENC readiness
-builds run 18 CTest cases. No encoder, CUDA Toolkit or WebRTC is needed here.
+builds run 19 CTest cases. No encoder, CUDA Toolkit or WebRTC is needed here.
 
 ## Consent and Gate
 
@@ -69,6 +69,51 @@ compositor and cross-GPU copies are unknown. CPU readback runs only when explici
 requested with `--snapshot`, separately from performance acceptance.
 
 ## Pixel Snapshot
+
+### Real Desktop Validation
+
+```sh
+build/capture-and-nvenc/host/capture/cloudplay_linux_capture_probe --desktop-validation /tmp/cloudplay-real-desktop.png --seconds 30
+```
+
+Select a non-sensitive 1920x1080 desktop and keep sharing active. Scroll text,
+drag a window and move the cursor throughout the run. This mode requests embedded
+cursor composition only after checking the portal's AvailableCursorModes; missing
+support fails explicitly. Ordinary probes retain their previous hidden-cursor mode.
+See the [ScreenCast portal cursor contract](https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.ScreenCast.html).
+
+One owned RGB snapshot is collected after five seconds and another after the
+requested duration. After capture stops, private PNGs are saved at the supplied
+path and `<path>.last.png`; existing files are never overwritten. Duration must
+be 30..120 seconds. CPU readbacks are counted separately as diagnosticCpuCopies,
+and this mode always leaves the zero-copy performance gate unpassed. It does not
+automatically certify pixel correctness, gradients or temporal motion from stills.
+For uncontaminated performance measurement, run the ordinary `--seconds 30` probe
+without snapshots, with continuous desktop motion visible.
+
+The 2026-10-02 live desktop run lasted 30.5203 seconds and delivered 921 GPU-backed
+frames (30.1766 FPS; minimum one-second interval 13.9977 FPS). All 921 frames were
+imported on NVIDIA; local discards were zero, with 17 producer sequence gaps.
+Gaps appeared around the first readback; a causal attribution requires a separate
+no-readback run. There were two explicit diagnostic CPU copies, no CPU-storage
+frames and no reported capture-module GPU copies. Internal driver copies remain
+unknown.
+
+Negotiation: SPA BGRx (8), DRM XRGB8888 (875713112), 1920x1080, linear modifier 0,
+one DMA-BUF plane (SPA memory type 3), stride 7680, map/chunk/effective offsets 0,
+chunk/allocation size 8294400 bytes. Crop was full-frame; no transform or explicit
+sync metadata was present. Implicit fences were ready before EGL import.
+Negotiated rate was unspecified (0), with maximum 60 FPS. Mean producer interval
+was 32.6431 ms, maximum 516.644 ms. Mean EGL import was 0.250475 ms, maximum
+0.556064 ms. Of 921 presentation timestamps, 915 were future-dated; signed mean
+presentation age was -6.99432 ms. This is not measured capture-origin latency.
+
+Both saved PNGs show readable desktop text, intact borders/icons and visible
+cursors without the reported colored artifacts. Content and cursor positions
+changed between snapshots. There is no independent desktop pixel reference;
+gradient fidelity and temporal motion correctness remain unverified. These
+observations do not establish stable 1080p60 or captured-frame NVENC interoperability.
+NVENC integration and WebRTC have not started.
 
 ### Multi-Frame Buffer Diagnostics
 
@@ -213,7 +258,8 @@ and last frame metrics. Codes: 0 session unavailable; 1 permission/session close
 - Presentation timing: future PTS, cadence, discontinuities, missing/invalid,
   duplicate/backwards timestamps and integer extremes without a GPU.
 - Private mock D-Bus portal: cancellation at CreateSession, SelectSources and Start,
-  exactly-once session close, direct destruction and repeated stop without GNOME/GPU.
+  exactly-once session close, direct destruction and repeated stop without GNOME/GPU;
+  embedded-cursor negotiation and unsupported-cursor failure.
 - Existing Windows capture and NVENC readiness tests are unchanged.
 
 The mock-bus test requires local Unix socket permission. Run CTest outside this

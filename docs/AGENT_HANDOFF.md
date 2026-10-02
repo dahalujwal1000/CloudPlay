@@ -23,6 +23,20 @@ The full series failed (exit 3). Source-stable multi-frame acceptance remains
 unverified; do not skip mismatches to pass. All 18 combined and five default tests,
 formatting/GCC analysis and all five CI jobs pass for diagnostic-mode source.
 
+Real desktop validation now has a `--desktop-validation new.png --seconds 30`
+mode with capability-checked embedded cursor and two private PNG snapshots.
+The live run delivered 921 DMA-BUF/EGL frames over 30.5203 seconds: 30.1766 FPS,
+zero local discards, 17 producer sequence gaps and two diagnostic CPU readbacks.
+SPA BGRx, 1920x1080, stride 7680, one linear DMA-BUF plane, zero offsets and
+8294400-byte allocation were negotiated. Both PNGs look clean, including text,
+borders and visible cursors; gradients and temporal motion remain unverified.
+Files are `/tmp/cloudplay-real-desktop.png` and `.last.png`; they are not committed.
+Do not count this readback run as zero-copy performance acceptance. Run a separate
+30-second continuous-motion desktop probe without snapshots before attributing
+its sequence gaps or advancing performance acceptance. All 19 combined and five
+default CTests pass for the desktop-validation changes; hosted CI is not yet
+verified for these changes. NVENC integration and WebRTC remain unstarted.
+
 Read `AGENTS.md`, `docs/TASKS.md`, the relevant architecture documents, and ADRs
 before continuing. Preserve the game-agnostic design and the existing subsystem
 boundaries. Coordinate ownership using `docs/AI_AGENT_WORKFLOW.md`.
