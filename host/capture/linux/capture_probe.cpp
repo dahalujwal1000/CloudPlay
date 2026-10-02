@@ -18,11 +18,17 @@ void interrupt(int) { interrupted = 1; }
 
 int main(int argc, char **argv) {
     std::cout << std::unitbuf;
+    for (int i = 1; i < argc; ++i)
+        if (std::string_view(argv[i]) == "--capture-diagnostics")
+            return cloudplay::capture::run_capture_diagnostics(argc, argv);
     unsigned seconds{30};
     std::string snapshot_path, reference_path;
     if (argc == 2 && std::string_view(argv[1]) == "--help") {
         std::cout << "Usage: cloudplay_linux_capture_probe [--seconds 1..120] "
-                     "[--snapshot new.png [--reference expected.png]]\n";
+                     "[--snapshot new.png [--reference expected.png]]\n"
+                     "  --capture-diagnostics [--cpu-capture] [--frames 1..120] "
+                     "[--seconds 1..120] [--snapshot new.png] [--reference expected.png]\n"
+                     "  --capture-diagnostics --generate-reference new.png\n";
         return 0;
     }
     for (int i = 1; i < argc; i += 2) {

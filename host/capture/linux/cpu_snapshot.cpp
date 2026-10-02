@@ -58,11 +58,6 @@ void validate(const CapturedFrame &frame) {
 
 CpuImage unpack_linear_frame(const CapturedFrame &frame, std::span<const unsigned char> memory) {
     validate(frame);
-    if (frame.storage == FrameStorage::CpuMemory) {
-        if (!frame.cpu_data || !frame.cpu_size)
-            error("snapshot.cpu_plane_unavailable");
-        return unpack_linear_frame(frame, {frame.cpu_data, frame.cpu_size});
-    }
     const auto &plane = frame.planes[0];
     const auto last = static_cast<std::uint64_t>(plane.offset) +
                       static_cast<std::uint64_t>(frame.height - 1) * plane.stride +
@@ -89,6 +84,11 @@ CpuImage unpack_linear_frame(const CapturedFrame &frame, std::span<const unsigne
 
 CpuImage read_cpu_snapshot(const CapturedFrame &frame) {
     validate(frame);
+    if (frame.storage == FrameStorage::CpuMemory) {
+        if (!frame.cpu_data || !frame.cpu_size)
+            error("snapshot.cpu_plane_unavailable");
+        return unpack_linear_frame(frame, {frame.cpu_data, frame.cpu_size});
+    }
     if (!frame.diagnostics.implicit_fences_ready || frame.diagnostics.explicit_sync_present)
         error("snapshot.fence_not_verified");
     const int fd = frame.planes[0].fd;
