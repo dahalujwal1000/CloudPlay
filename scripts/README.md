@@ -63,6 +63,24 @@ A single manual sync without starting the daemon:
 5. Sync is skipped automatically during a merge / rebase / cherry-pick / revert /
    bisect, or while the pause sentinel exists.
 
+## Auto-start on login (optional)
+
+A systemd **user** service template is provided so the daemon starts
+automatically and survives reboots:
+
+```bash
+mkdir -p ~/.config/systemd/user
+cp scripts/autosync.service.example ~/.config/systemd/user/cloudplay-autosync.service
+# edit WorkingDirectory / ExecStart inside the file to match your checkout path
+systemctl --user daemon-reload
+systemctl --user enable --now cloudplay-autosync.service
+systemctl --user status cloudplay-autosync.service
+journalctl --user -u cloudplay-autosync.service -f
+```
+
+If you prefer to run it only inside a terminal session, use
+`./scripts/autosync.sh start` instead.
+
 ## Notes & caveats
 
 * Hooks live in `.git/hooks/` and are **not** tracked by git; run

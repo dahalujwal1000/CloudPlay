@@ -1,0 +1,31 @@
+# CloudPlay auto-sync — systemd *user* service (example).
+#
+# Lets the daemon start automatically on login and survive reboots.
+#
+# Install:
+#   mkdir -p ~/.config/systemd/user
+#   cp scripts/autosync.service.example ~/.config/systemd/user/cloudplay-autosync.service
+#   # edit WorkingDirectory + ExecStart below to match your checkout path
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now cloudplay-autosync.service
+#   systemctl --user status cloudplay-autosync.service
+#   journalctl --user -u cloudplay-autosync.service -f
+#
+# Control:
+#   systemctl --user stop cloudplay-autosync.service
+#   systemctl --user disable --now cloudplay-autosync.service
+
+[Unit]
+Description=CloudPlay automatic GitHub sync (commit + push on change)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/Documents/CloudPlay_Professional_Blueprint
+ExecStart=/usr/bin/python3 %h/Documents/CloudPlay_Professional_Blueprint/scripts/autosync.py --interval 5 --debounce 15
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
