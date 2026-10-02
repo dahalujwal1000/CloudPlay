@@ -24,7 +24,11 @@ NVENC, preview rendering, audio, game launch, input, streaming, HDR/tone mapping
 - [x] Portable policy tests cover invalid sizes and resize.
 - [x] Module/probe and owner/lifetime documentation added.
 - [x] Linux build/tests, format check, and GCC analysis pass.
-- [ ] Windows/MSVC build and validation tests pass for the capture revision.
+- [x] Windows/MSVC build and validation tests pass for the capture revision.
+
+Native Linux/Windows and native-quality jobs passed at
+`e3d8fe73a6c765db4c35f7d03fadf44680325405` in
+[capture CI](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37000958387).
 - [ ] Probe delivers textures on the user's Windows 11/RTX 3050 PC.
 - [ ] Resize, minimize/restore, target close, and repeated start/stop verified live.
 - [ ] Permission/device-loss handling verified on Windows where feasible.

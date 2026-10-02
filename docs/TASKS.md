@@ -9,8 +9,8 @@ See [acceptance criteria](tasks/TASK-001-foundation.md) and [agent handoff](AGEN
 ## TASK-002 Windows Capture
 Implement Windows Graphics Capture → D3D11 texture.
 
-Status: capture module and diagnostic implemented; Windows compilation and live GPU
-acceptance in progress. See [capture task](tasks/TASK-002-capture.md).
+Status: capture module/diagnostic build and tests pass in Windows/Linux CI;
+live GPU acceptance is pending. See [capture task](tasks/TASK-002-capture.md).
 
 ## TASK-003 NVENC
 Implement H.264 hardware encoding and benchmark.

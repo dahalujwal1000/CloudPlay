@@ -6,7 +6,7 @@ Last verified: 2026-10-02.
 
 TASK-001 foundation is verified across native host, Android, signaling, and CI,
 including hosted Windows/MSVC build/tests. TASK-002 now has a Windows Graphics
-Capture module and diagnostic; capture revision CI and live GPU acceptance remain
+Capture module and diagnostic; live GPU acceptance remains
 in progress. Encoding, streaming, and pairing have not been implemented.
 
 Read `AGENTS.md`, `docs/TASKS.md`, the relevant architecture documents, and ADRs
