@@ -16,6 +16,7 @@ android {
         warningsAsErrors = true
         // Dependency updates are reviewed deliberately; pinned versions keep builds reproducible.
         disable += "GradleDependency"
+        disable += "AndroidGradlePluginVersion"
     }
 }
 kotlin { jvmToolchain(17) }

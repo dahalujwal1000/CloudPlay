@@ -2,6 +2,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="false"
+        android:icon="@mipmap/ic_launcher"
         android:label="CloudPlay"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
