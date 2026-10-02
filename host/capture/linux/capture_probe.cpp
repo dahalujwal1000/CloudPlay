@@ -103,7 +103,15 @@ int main(int argc, char **argv) {
                              static_cast<double>(stats.presentation_age_samples);
         else
             std::cout << "null";
-        std::cout << ",\"captureOriginLatencyVerified\":false"
+        std::cout << ",\"negotiatedFps\":" << stats.negotiated_fps
+                  << ",\"negotiatedMaxFps\":" << stats.negotiated_max_fps
+                  << ",\"meanGpuImportMs\":";
+        if (stats.gpu_imports)
+            std::cout << stats.gpu_import_time_sum_ms / static_cast<double>(stats.gpu_imports);
+        else
+            std::cout << "null";
+        std::cout << ",\"maxGpuImportMs\":" << stats.max_gpu_import_time_ms
+                  << ",\"captureOriginLatencyVerified\":false"
                   << ",\"internalDriverCopies\":null,\"nvencInteropVerified\":false}\n";
         return stable ? 0 : 3;
     } catch (const cloudplay::capture::FrameCaptureError &error) {
@@ -115,6 +123,9 @@ int main(int argc, char **argv) {
                   << ",\"height\":" << stats.height << ",\"drmFourcc\":" << stats.drm_format
                   << ",\"gpuImports\":" << stats.gpu_imports
                   << ",\"cpuFrames\":" << stats.cpu_frames << ",\"discarded\":" << stats.discarded
+                  << ",\"negotiatedFps\":" << stats.negotiated_fps
+                  << ",\"negotiatedMaxFps\":" << stats.negotiated_max_fps
+                  << ",\"maxGpuImportMs\":" << stats.max_gpu_import_time_ms
                   << ",\"stable1080p60Gpu\":false}\n";
         return 1;
     } catch (...) {
