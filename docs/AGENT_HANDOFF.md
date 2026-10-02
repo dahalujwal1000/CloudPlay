@@ -13,6 +13,10 @@ live synthetic H.264/HEVC hardware checks pass. Linux portal/PipeWire capture is
 implemented behind IFrameCapture and imports live 1080p DMA-BUFs on NVIDIA.
 The sustained 1080p60 gate has NOT passed (observed 35-42 FPS). Production encoding,
 captured-frame NVENC interoperability, streaming, and pairing are not implemented.
+`--capture-diagnostics` now traces buffer lifecycle/layout/FDs and compares a bounded
+PNG series. `--cpu-capture` negotiates mapped MemFd/MemPtr packed RGB without EGL.
+Use the new immutable plain-bars reference to isolate intermittent artifacts;
+do not treat this diagnostic work as encoder or performance acceptance.
 
 Read `AGENTS.md`, `docs/TASKS.md`, the relevant architecture documents, and ADRs
 before continuing. Preserve the game-agnostic design and the existing subsystem

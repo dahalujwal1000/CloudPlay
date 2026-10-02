@@ -70,6 +70,60 @@ requested with `--snapshot`, separately from performance acceptance.
 
 ## Pixel Snapshot
 
+### Multi-Frame Buffer Diagnostics
+
+Use `--capture-diagnostics` to trace every acquire/release and each delivered
+frame's SPA format, named packed pixel format, width/height, per-plane FD, memory
+type, offset/stride/size, modifier, GPU/mapped-CPU status, sync path, crop/transform
+and EGL import status. FD numbers are local diagnostic values, not owned handles;
+they are printed only in this explicitly requested mode. Do not reuse those values.
+
+```sh
+build/capture-and-nvenc/host/capture/cloudplay_linux_capture_probe --capture-diagnostics --generate-reference /tmp/cloudplay-bars.png
+SDL_VIDEODRIVER=wayland ffplay -loop 0 -i /tmp/cloudplay-bars.png -vf format=bgra -an -fs
+build/capture-and-nvenc/host/capture/cloudplay_linux_capture_probe --capture-diagnostics --cpu-capture --frames 8 --seconds 30 --snapshot /tmp/cloudplay-cpu.png --reference /tmp/cloudplay-bars.png
+```
+
+`--cpu-capture` negotiates packed RGB without a modifier, MemFd/MemPtr storage,
+PipeWire MAP_BUFFERS and NO_CONVERT; no EGL device/import is required. The exact
+mapped plane's chunk offset and stride are used, with allocation/chunk bounds
+checks. CPU-copy ownership is tested independently of the producer's memory.
+Without `--cpu-capture`, the same mode traces the original DMA-BUF/EGL path and
+makes synchronized CPU copies. Compare both paths with the same static reference.
+
+Defaults: eight frames, 30-second collection limit; both accept 1..120. Each frame
+is saved privately: first at `--snapshot`, subsequent frames with `.2.png`, etc.
+Absent `--snapshot`, a PID-specific `/tmp/cloudplay-diagnostic-<pid>.png` base is
+used. Existing files are never overwritten. An interrupted/incomplete or mismatched
+series exits 3. Without `--reference`, correctness is explicitly unverified.
+No mode here qualifies as GPU/FPS acceptance or starts NVENC/WebRTC.
+
+The reference is immutable, with eight plain RGB bars, a white border and a gray
+horizontal marker. It contains no diagonal features, checkerboards or random pixels.
+Animated `testsrc2` cannot be compared against a fixed reference at an unknown
+timestamp: intentional details change over time.
+
+Packed BGRx/BGRA/RGBx/RGBA interpretation is tested, including padding, nonzero
+offset and row orientation. NV12 and CPU multi-plane layouts are deliberately
+not negotiated or converted: unsupported formats fail rather than being treated
+as RGBA. GPU multi-plane DMA-BUFs remain EGL-import-only; CPU diagnostics reject
+them until format/colorimetry-correct plane handling is implemented.
+The CPU storage path uses PipeWire's producer/consumer dequeue ownership, not
+meaningless DMA-BUF ioctls on a regular MemFd. See [PipeWire stream flags and recycling](https://docs.pipewire.org/group__pw__stream.html).
+
+Each CPU copy completes inside the borrowed callback, before recycling. Its
+checksum is recorded while leased and verified after poll returns. PNG writing
+and comparison occur only on that owned vector. The summary checks acquired and
+returned counts; the existing lease tests verify exactly-once exception cleanup
+and image-before-buffer release. Explicit-sync DMA-BUFs remain unsupported and
+are rejected rather than ignored.
+
+The user-supplied screenshot `Screenshot From 2026-10-02 18-30-02.png` was inspected
+and independently decoded as RGB24. Its frame MD5 is
+`2ef828823e00896dc95f16d3f764def0`, identical to the immutable testsrc2 reference
+and previous CPU capture. That supplied image contains no added RGB pixels relative
+to that reference; this does not rule out unprovided intermittent faulty frames.
+
 Install libpng development headers and reconfigure/rebuild. Snapshot mode acquires
 one frame, copies RGB bytes while the producer buffer is still leased, then stops
 capture before PNG compression. Files are created with mode 0600 and existing
