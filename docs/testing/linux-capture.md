@@ -50,7 +50,8 @@ no CPU frames/copies and available presentation timestamps. Exit 0: gate passed;
 
 JSON records include FPS, resolution, DRM FourCC/modifier, received/delivered/discarded
 counts, sequence gaps, GPU imports, CPU frames, capture-module copy counts and
-presentation age. FourCC 875713112 is XRGB8888 (BGRx bytes on this little-endian host).
+presentation age, negotiated/max FPS and mean/max EGL import time. FourCC
+875713112 is XRGB8888 (BGRx bytes on this little-endian host).
 Sequence gaps can include local discards; do not sum them as disjoint losses.
 Drops before producer sequence assignment are not observable here.
 
@@ -97,3 +98,5 @@ sample. That retest is pending. No WebRTC integration has started.
 All 15 combined native tests passed locally with IPC access. Native formatting,
 GCC analysis and all five [capture CI jobs](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37005794506)
 passed at revision `fb5bbbcbd5ed8dd6ff563ea2cfbbadaf4947e9a6`.
+Local ASan/UBSan configuration was attempted but cannot link because Fedora
+`libasan` and `libubsan` are not installed; no sanitizer pass is claimed.

@@ -237,6 +237,9 @@ jobs passed at `fb5bbbcbd5ed8dd6ff563ea2cfbbadaf4947e9a6` in
 [Linux capture CI](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37005794506),
 including Windows preservation, Linux builds/tests and clang-tidy. These CI tests
 do not establish live 1080p60 or NVENC interoperability. No WebRTC work started.
+The final probe also reports negotiated/max FPS and mean/max EGL import time to
+distinguish producer cadence from import cost. Local ASan/UBSan was attempted but
+could not link: Fedora libasan/libubsan are absent. No sanitizer pass is claimed.
 The live readiness probe reports SDK/driver API 13.1 and interface ready. Its
 CTest cases exercise CLI handling and isolated fake-driver failure paths, without
 requiring a GPU in CI. Default domain tests still build without NVIDIA headers.

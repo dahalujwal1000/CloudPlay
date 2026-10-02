@@ -60,6 +60,10 @@ struct FrameCaptureMetrics {
     std::uint64_t future_timestamps{};
     double presentation_age_sum_ms{};
     double minimum_presentation_age_ms{};
+    double gpu_import_time_sum_ms{};
+    double max_gpu_import_time_ms{};
+    double negotiated_fps{};
+    double negotiated_max_fps{};
     int native_error{};
     std::uint32_t width{};
     std::uint32_t height{};

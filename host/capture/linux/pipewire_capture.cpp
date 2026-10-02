@@ -96,6 +96,10 @@ struct PipeWireCapture::Impl {
         metrics.height = format.size.height;
         metrics.drm_format = drm_format(format.format);
         metrics.modifier = format.modifier;
+        metrics.negotiated_fps = format.framerate.denom
+            ? static_cast<double>(format.framerate.num) / format.framerate.denom : 0;
+        metrics.negotiated_max_fps = format.max_framerate.denom
+            ? static_cast<double>(format.max_framerate.num) / format.max_framerate.denom : 0;
         if (!drm_format(format.format) || format.size.width != options.width ||
             format.size.height != options.height || !(format.flags & SPA_VIDEO_FLAG_MODIFIER)) {
             fail(FrameCaptureFailure::UnsupportedFormat);
@@ -206,7 +210,10 @@ struct PipeWireCapture::Impl {
                 }
             }
         }
+        const auto import_start = std::chrono::steady_clock::now();
         const auto image = gpu->import(frame);
+        const auto import_ms = std::chrono::duration<double, std::milli>(
+            std::chrono::steady_clock::now() - import_start).count();
         if (image == EGL_NO_IMAGE_KHR) {
             metrics.native_error = eglGetError();
             ++metrics.discarded;
@@ -217,6 +224,8 @@ struct PipeWireCapture::Impl {
             static_cast<GpuImporter *>(owner)->release(static_cast<EGLImageKHR>(image));
         });
         ++metrics.gpu_imports;
+        metrics.gpu_import_time_sum_ms += import_ms;
+        metrics.max_gpu_import_time_ms = std::max(metrics.max_gpu_import_time_ms, import_ms);
         frame.native_image = image;
         state = FrameCaptureState::Delivering;
         try {
