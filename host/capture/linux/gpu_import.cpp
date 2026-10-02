@@ -76,6 +76,8 @@ std::vector<std::uint64_t> GpuImporter::modifiers(std::uint32_t format) const {
     if (!query_(display_, static_cast<EGLint>(format), count, values.data(), nullptr, &count))
         return {};
     values.resize(static_cast<std::size_t>(count));
+    if (values.size() > 64)
+        values.resize(64);
     return {values.begin(), values.end()};
 }
 

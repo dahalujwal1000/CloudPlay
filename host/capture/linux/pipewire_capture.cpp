@@ -279,6 +279,9 @@ void PipeWireCapture::start(const CaptureOptions &options) {
         std::uint8_t storage[16384];
         auto builder = SPA_POD_BUILDER_INIT(storage, sizeof(storage));
         std::vector<const spa_pod *> params;
+        const spa_rectangle size{options.width, options.height};
+        const spa_fraction rate{options.fps, 1};
+        const spa_fraction minimum_rate{0, 1};
         for (const auto &entry : formats) {
             const auto modifiers = self.gpu->modifiers(entry.drm);
             if (modifiers.empty())
@@ -290,8 +293,9 @@ void PipeWireCapture::start(const CaptureOptions &options) {
                 SPA_FORMAT_mediaType, SPA_POD_Id(SPA_MEDIA_TYPE_video),
                 SPA_FORMAT_mediaSubtype, SPA_POD_Id(SPA_MEDIA_SUBTYPE_raw),
                 SPA_FORMAT_VIDEO_format, SPA_POD_Id(entry.spa),
-                SPA_FORMAT_VIDEO_size, SPA_POD_Rectangle(&SPA_RECTANGLE(options.width, options.height)),
-                SPA_FORMAT_VIDEO_framerate, SPA_POD_Fraction(&SPA_FRACTION(options.fps, 1)), 0);
+                SPA_FORMAT_VIDEO_size, SPA_POD_Rectangle(&size),
+                SPA_FORMAT_VIDEO_framerate, SPA_POD_CHOICE_RANGE_Fraction(&rate, &minimum_rate, &rate),
+                SPA_FORMAT_VIDEO_maxFramerate, SPA_POD_Fraction(&rate), 0);
             spa_pod_builder_prop(&builder, SPA_FORMAT_VIDEO_modifier,
                 SPA_POD_PROP_FLAG_MANDATORY | SPA_POD_PROP_FLAG_DONT_FIXATE);
             spa_pod_builder_push_choice(&builder, &choice, SPA_CHOICE_Enum, 0);
