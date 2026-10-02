@@ -1,10 +1,12 @@
+#include "cpu_snapshot.hpp"
+#include <algorithm>
 #include <charconv>
 #include <chrono>
 #include <cloudplay/capture/capture_acceptance.hpp>
 #include <cloudplay/capture/pipewire_capture.hpp>
 #include <csignal>
-#include <iostream>
 #include <exception>
+#include <iostream>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -75,8 +77,9 @@ int main(int argc, char **argv) {
                     throw std::runtime_error("Invalid GPU frame");
                 if (!layout_logged) {
                     std::cout << "{\"event\":\"capture.format\",\"width\":" << frame.width
-                              << ",\"height\":" << frame.height << ",\"drmFourcc\":"
-                              << frame.drm_format << ",\"modifier\":" << frame.modifier << "}\n";
+                              << ",\"height\":" << frame.height
+                              << ",\"drmFourcc\":" << frame.drm_format
+                              << ",\"modifier\":" << frame.modifier << "}\n";
                     cloudplay::capture::log_buffer_diagnostics(frame.diagnostics);
                     layout_logged = true;
                 }
@@ -123,14 +126,14 @@ int main(int argc, char **argv) {
             cloudplay::capture::save_png(snapshot, snapshot_path);
             std::uint64_t mismatched_pixels{};
             unsigned max_difference{};
-            const bool same_size = reference.width == snapshot.width &&
-                                   reference.height == snapshot.height;
+            const bool same_size =
+                reference.width == snapshot.width && reference.height == snapshot.height;
             if (!reference_path.empty() && same_size) {
                 for (std::size_t i = 0; i < snapshot.rgb.size(); i += 3) {
                     bool mismatch{};
                     for (unsigned c = 0; c < 3; ++c) {
-                        const auto difference = static_cast<unsigned>(std::abs(
-                            static_cast<int>(snapshot.rgb[i + c]) - reference.rgb[i + c]));
+                        const auto difference = static_cast<unsigned>(
+                            std::abs(static_cast<int>(snapshot.rgb[i + c]) - reference.rgb[i + c]));
                         max_difference = std::max(max_difference, difference);
                         mismatch = mismatch || difference != 0;
                     }
@@ -220,5 +223,3 @@ int main(int argc, char **argv) {
         return 1;
     }
 }
-#include "cpu_snapshot.hpp"
-#include <algorithm>

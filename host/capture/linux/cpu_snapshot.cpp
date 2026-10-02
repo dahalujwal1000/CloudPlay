@@ -7,6 +7,8 @@
 #include <fcntl.h>
 #include <iostream>
 #include <linux/dma-buf.h>
+#include <spa/buffer/buffer.h>
+#include <spa/param/video/format.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -58,11 +60,11 @@ CpuImage unpack_linear_frame(const CapturedFrame &frame, std::span<const unsigne
                       static_cast<std::uint64_t>(frame.width) * 4;
     if (last > memory.size())
         error("snapshot.plane_out_of_bounds");
-    CpuImage image{frame.width, frame.height,
-                   std::vector<unsigned char>(static_cast<std::size_t>(frame.width) * frame.height *
-                                              3)};
-    const bool bgr = frame.drm_format == DRM_FORMAT_XRGB8888 ||
-                     frame.drm_format == DRM_FORMAT_ARGB8888;
+    CpuImage image{
+        frame.width, frame.height,
+        std::vector<unsigned char>(static_cast<std::size_t>(frame.width) * frame.height * 3)};
+    const bool bgr =
+        frame.drm_format == DRM_FORMAT_XRGB8888 || frame.drm_format == DRM_FORMAT_ARGB8888;
     for (std::uint32_t y = 0; y < frame.height; ++y) {
         const auto *row = memory.data() + plane.offset + static_cast<std::size_t>(y) * plane.stride;
         for (std::uint32_t x = 0; x < frame.width; ++x) {
@@ -81,7 +83,7 @@ CpuImage read_cpu_snapshot(const CapturedFrame &frame) {
     if (!frame.diagnostics.implicit_fences_ready || frame.diagnostics.explicit_sync_present)
         error("snapshot.fence_not_verified");
     const int fd = frame.planes[0].fd;
-    struct stat status{};
+    struct stat status {};
     if (fstat(fd, &status) < 0)
         error("snapshot.fstat", errno);
     if (status.st_size <= 0 || status.st_size > 256 * 1024 * 1024)
@@ -168,8 +170,26 @@ CpuImage load_png(const std::string &path) {
 }
 
 void log_buffer_diagnostics(const FrameBufferDiagnostics &d) {
+    const char *name = "unsupported";
+    switch (d.spa_format) {
+    case SPA_VIDEO_FORMAT_BGRx:
+        name = "BGRx";
+        break;
+    case SPA_VIDEO_FORMAT_BGRA:
+        name = "BGRA";
+        break;
+    case SPA_VIDEO_FORMAT_RGBx:
+        name = "RGBx";
+        break;
+    case SPA_VIDEO_FORMAT_RGBA:
+        name = "RGBA";
+        break;
+    default:
+        break;
+    }
     std::cout << "{\"event\":\"capture.buffer\",\"spaFormat\":" << d.spa_format
-              << ",\"storage\":\"DMA-BUF -> NVIDIA EGLImage\",\"explicitSyncPresent\":"
+              << ",\"spaFormatName\":\"" << name
+              << "\",\"requestedPath\":\"DMA-BUF -> NVIDIA EGLImage\",\"explicitSyncPresent\":"
               << (d.explicit_sync_present ? "true" : "false")
               << ",\"implicitFencesReady\":" << (d.implicit_fences_ready ? "true" : "false")
               << ",\"planeCount\":" << d.plane_count << ",\"planes\":[";
@@ -177,14 +197,15 @@ void log_buffer_diagnostics(const FrameBufferDiagnostics &d) {
         if (i)
             std::cout << ',';
         std::cout << "{\"memoryType\":" << d.memory_types[i] << ",\"dataFlags\":" << d.data_flags[i]
+                  << ",\"isDmaBuf\":" << (d.memory_types[i] == SPA_DATA_DmaBuf ? "true" : "false")
                   << ",\"mapOffset\":" << d.map_offsets[i]
-                  << ",\"chunkOffset\":" << d.chunk_offsets[i] << ",\"chunkSize\":" << d.chunk_sizes[i]
-                  << ",\"maxSize\":" << d.max_sizes[i] << ",\"stride\":" << d.strides[i] << '}';
+                  << ",\"chunkOffset\":" << d.chunk_offsets[i]
+                  << ",\"chunkSize\":" << d.chunk_sizes[i] << ",\"maxSize\":" << d.max_sizes[i]
+                  << ",\"stride\":" << d.strides[i] << '}';
     }
-    std::cout << "],\"cropPresent\":" << (d.crop_present ? "true" : "false")
-              << ",\"crop\":[" << d.crop_x << ',' << d.crop_y << ',' << d.crop_width << ','
-              << d.crop_height << "],\"transformPresent\":"
-              << (d.transform_present ? "true" : "false") << ",\"transform\":" << d.transform
-              << "}\n";
+    std::cout << "],\"cropPresent\":" << (d.crop_present ? "true" : "false") << ",\"crop\":["
+              << d.crop_x << ',' << d.crop_y << ',' << d.crop_width << ',' << d.crop_height
+              << "],\"transformPresent\":" << (d.transform_present ? "true" : "false")
+              << ",\"transform\":" << d.transform << "}\n";
 }
 } // namespace cloudplay::capture

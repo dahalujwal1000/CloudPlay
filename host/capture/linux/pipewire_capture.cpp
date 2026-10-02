@@ -128,10 +128,10 @@ struct PipeWireCapture::Impl {
             spa_pod_builder_add_object(&builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
                                        SPA_PARAM_META_type, SPA_POD_Id(SPA_META_Header),
                                        SPA_PARAM_META_size, SPA_POD_Int(sizeof(spa_meta_header))));
-        params[2] = static_cast<spa_pod *>(spa_pod_builder_add_object(
-            &builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta, SPA_PARAM_META_type,
-            SPA_POD_Id(SPA_META_VideoCrop), SPA_PARAM_META_size,
-            SPA_POD_Int(sizeof(spa_meta_region))));
+        params[2] = static_cast<spa_pod *>(
+            spa_pod_builder_add_object(&builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
+                                       SPA_PARAM_META_type, SPA_POD_Id(SPA_META_VideoCrop),
+                                       SPA_PARAM_META_size, SPA_POD_Int(sizeof(spa_meta_region))));
         params[3] = static_cast<spa_pod *>(spa_pod_builder_add_object(
             &builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta, SPA_PARAM_META_type,
             SPA_POD_Id(SPA_META_VideoTransform), SPA_PARAM_META_size,
@@ -187,8 +187,9 @@ struct PipeWireCapture::Impl {
             metrics.buffer.crop_width = crop->region.size.width;
             metrics.buffer.crop_height = crop->region.size.height;
         }
-        if (const auto *transform = static_cast<spa_meta_videotransform *>(spa_buffer_find_meta_data(
-                buffer, SPA_META_VideoTransform, sizeof(spa_meta_videotransform)))) {
+        if (const auto *transform =
+                static_cast<spa_meta_videotransform *>(spa_buffer_find_meta_data(
+                    buffer, SPA_META_VideoTransform, sizeof(spa_meta_videotransform)))) {
             metrics.buffer.transform_present = true;
             metrics.buffer.transform = transform->transform;
         }
@@ -231,8 +232,7 @@ struct PipeWireCapture::Impl {
                                plane.chunk->stride};
             pollfd fence{static_cast<int>(plane.fd), POLLIN, 0};
             const auto wait = ::poll(&fence, 1, 1000);
-            if (wait <= 0 || !(fence.revents & POLLIN) ||
-                (fence.revents & (POLLERR | POLLNVAL))) {
+            if (wait <= 0 || !(fence.revents & POLLIN) || (fence.revents & (POLLERR | POLLNVAL))) {
                 metrics.native_error = wait < 0 ? errno : 0;
                 fail(wait == 0 ? FrameCaptureFailure::Timeout : FrameCaptureFailure::GpuImport);
                 return;
