@@ -18,7 +18,7 @@ build/linux-capture/host/capture/cloudplay_linux_capture_probe --seconds 30
 Use the normal logged-in GNOME Wayland user, not sudo, SSH, a container or another
 user's bus. Session D-Bus and GPU device access are required. Sandbox IPC/device
 restrictions are distinct from driver failures. Linux capture plus NVENC readiness
-builds run 16 CTest cases. No encoder, CUDA Toolkit or WebRTC is needed here.
+builds run 18 CTest cases. No encoder, CUDA Toolkit or WebRTC is needed here.
 
 ## Consent and Gate
 
@@ -123,6 +123,18 @@ and independently decoded as RGB24. Its frame MD5 is
 `2ef828823e00896dc95f16d3f764def0`, identical to the immutable testsrc2 reference
 and previous CPU capture. That supplied image contains no added RGB pixels relative
 to that reference; this does not rule out unprovided intermittent faulty frames.
+
+First CPU-only series: eight mapped MemFd BGRx frames (memory type 2, flags 9),
+1920x1080, stride 7680, zero offsets, 8294400-byte allocations, full-frame crop,
+no transform or EGL import. FDs 24/26/27 were reused only after each callback's
+owned copy completed. Eight acquisitions and returns matched; all owned-copy
+checksums stayed unchanged after release. Every PNG differed from the bars
+reference: inspection showed the IDE/sharing dialog instead of the bars.
+Exit 3 correctly failed the series. Do not mark CPU-series pixel acceptance as
+passed, or attribute that wrong-source fixture to a proven buffer bug.
+Saved files: `/tmp/cloudplay-cpu-series.png` and `.2.png` through `.8.png` (private).
+Reference: `/tmp/cloudplay-static-bars-reference.png`. A visible-pattern retry is
+required; neither NVENC nor WebRTC work has started.
 
 Install libpng development headers and reconfigure/rebuild. Snapshot mode acquires
 one frame, copies RGB bytes while the producer buffer is still leased, then stops
