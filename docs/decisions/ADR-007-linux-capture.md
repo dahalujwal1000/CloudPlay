@@ -38,14 +38,15 @@ production encoder. Existing NVENC tests remain unchanged.
 
 Normal capture maps/saves no pixels; capture-module copy counts are zero.
 An explicit diagnostic-only `--snapshot` maps a linear packed-RGB DMA-BUF with
+CPU SYNC START/END READ while leased, saves a private PNG, and optionally compares
+an immutable reference exactly. It reports its CPU copy separately and does not
+qualify as performance acceptance. Unsupported layout/crop/sync paths fail.
+
 `--capture-diagnostics` traces per-frame layout/FDs and acquire/release accounting.
 Its optional `--cpu-capture` negotiates mapped packed-RGB MemFd/MemPtr storage
 without EGL, allowing CPU-only isolation before any GPU optimization. CPU copies
 are owned before recycling, and PNG/reference checks run afterward. NV12 and CPU
 multi-plane layouts are rejected rather than misinterpreted or color-corrected.
-CPU SYNC START/END READ while leased, saves a private PNG, and optionally compares
-an immutable reference exactly. It reports its CPU copy separately and does not
-qualify as performance acceptance. Unsupported layout/crop/sync paths fail.
 Compositor/driver internal and cross-device copies remain unknown.
 WebRTC remains gated on stable 1080p60 GPU capture and encoder interoperability.
 NVENC integration also requires pixel-correct diagnostic frames; exact CPU RGB
