@@ -117,3 +117,9 @@ Local ASan/UBSan configuration was attempted but cannot link because Fedora
 All five [final source CI jobs](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37006485726)
 passed at `59a6b9705bc68076ca70e02987a1ef28acba7bec`, including the final import/FPS
 metrics. All 15 combined and five default tests pass locally.
+
+After adding presentation cadence diagnostics and expanded portal-denial tests,
+all 15 combined and five default tests passed again, as did clang-format 18 and
+GCC `-fanalyzer`. Linux/Windows build/tests and native quality passed in
+[the updated source CI run](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37007469783)
+at revision `12794b64688dfeff89aaf4cc9badd2a47f9c79af`.
