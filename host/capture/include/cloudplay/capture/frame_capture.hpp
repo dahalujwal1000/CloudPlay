@@ -47,6 +47,7 @@ struct FrameBufferDiagnostics {
     std::uint32_t transform{};
     bool explicit_sync_present{};
     bool implicit_fences_ready{};
+    bool egl_image_imported{};
 };
 
 struct CapturedFrame {

@@ -196,11 +196,17 @@ void log_buffer_diagnostics(const FrameBufferDiagnostics &d) {
               << "\",\"requestedPath\":\"DMA-BUF -> NVIDIA EGLImage\",\"explicitSyncPresent\":"
               << (d.explicit_sync_present ? "true" : "false")
               << ",\"implicitFencesReady\":" << (d.implicit_fences_ready ? "true" : "false")
+              << ",\"eglImageImported\":" << (d.egl_image_imported ? "true" : "false")
               << ",\"planeCount\":" << d.plane_count << ",\"planes\":[";
     for (std::uint32_t i = 0; i < std::min(d.plane_count, 4U); ++i) {
         if (i)
             std::cout << ',';
-        std::cout << "{\"memoryType\":" << d.memory_types[i] << ",\"dataFlags\":" << d.data_flags[i]
+        const char *memory_name = d.memory_types[i] == SPA_DATA_DmaBuf   ? "DmaBuf"
+                                  : d.memory_types[i] == SPA_DATA_MemFd  ? "MemFd"
+                                  : d.memory_types[i] == SPA_DATA_MemPtr ? "MemPtr"
+                                                                         : "unsupported";
+        std::cout << "{\"memoryType\":" << d.memory_types[i] << ",\"memoryTypeName\":\""
+                  << memory_name << '"' << ",\"dataFlags\":" << d.data_flags[i]
                   << ",\"isDmaBuf\":" << (d.memory_types[i] == SPA_DATA_DmaBuf ? "true" : "false")
                   << ",\"mapOffset\":" << d.map_offsets[i]
                   << ",\"chunkOffset\":" << d.chunk_offsets[i] << ",\"effectiveOffset\":"

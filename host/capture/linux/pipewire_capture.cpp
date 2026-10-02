@@ -285,6 +285,8 @@ struct PipeWireCapture::Impl {
         metrics.gpu_import_time_sum_ms += import_ms;
         metrics.max_gpu_import_time_ms = std::max(metrics.max_gpu_import_time_ms, import_ms);
         frame.native_image = image;
+        metrics.buffer.egl_image_imported = true;
+        frame.diagnostics = metrics.buffer;
         state = FrameCaptureState::Delivering;
         try {
             (*consumer)(frame);
