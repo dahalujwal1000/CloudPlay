@@ -1,5 +1,7 @@
 #include <cloudplay/capture/capture_acceptance.hpp>
 #include <cloudplay/capture/frame_capture.hpp>
+#include <cloudplay/capture/presentation_timing.hpp>
+#include <limits>
 #include <stdexcept>
 #include <type_traits>
 
@@ -43,6 +45,28 @@ int main() {
         throw std::runtime_error("GPU image not released before buffer reuse");
 
     using namespace cloudplay::capture;
+    FrameCaptureMetrics timing_metrics;
+    PresentationTiming timing;
+    timing.observe(timing_metrics, 1000000000, 1001000000);
+    timing.observe(timing_metrics, 1016000000, 1015000000);
+    if (timing_metrics.presentation_age_samples != 2 || timing_metrics.future_timestamps != 1 ||
+        timing_metrics.latency_samples != 1 || timing_metrics.latency_sum_ms != 1.0 ||
+        timing_metrics.minimum_presentation_age_ms != -1.0 ||
+        timing_metrics.presentation_intervals != 1 ||
+        timing_metrics.presentation_interval_sum_ms != 16.0)
+        throw std::runtime_error("Incorrect presentation age or cadence");
+    timing.observe(timing_metrics, 1032000000, 1032000000, true);
+    timing.observe(timing_metrics, 0, 1048000000);
+    timing.observe(timing_metrics, std::numeric_limits<std::int64_t>::min(), 1048000000);
+    timing.observe(timing_metrics, std::numeric_limits<std::int64_t>::max(), 1048000000);
+    timing.observe(timing_metrics, 1048000000, 1048000000);
+    timing.observe(timing_metrics, 1048000000, 1048000000);
+    timing.observe(timing_metrics, 1047000000, 1048000000);
+    if (timing_metrics.presentation_intervals != 1 ||
+        timing_metrics.presentation_age_samples != 6 ||
+        timing_metrics.max_presentation_interval_ms != 16.0)
+        throw std::runtime_error("Invalid or discontinuous timestamp counted as cadence");
+
     FrameCaptureMetrics good;
     good.delivered = good.gpu_imports = good.received = 1800;
     good.width = 1920;

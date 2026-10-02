@@ -50,7 +50,10 @@ no CPU frames/copies and available presentation timestamps. Exit 0: gate passed;
 
 JSON records include FPS, resolution, DRM FourCC/modifier, received/delivered/discarded
 counts, sequence gaps, GPU imports, CPU frames, capture-module copy counts and
-presentation age, negotiated/max FPS and mean/max EGL import time. FourCC
+presentation age, mean/max producer presentation interval, negotiated/max FPS
+and mean/max EGL import time. Presentation intervals exclude missing, implausible,
+duplicate, backwards and discontinuous timestamps; they describe observed producer
+cadence, not the source application's render FPS. FourCC
 875713112 is XRGB8888 (BGRx bytes on this little-endian host).
 Sequence gaps can include local discards; do not sum them as disjoint losses.
 Drops before producer sequence assignment are not observable here.
@@ -72,8 +75,10 @@ and last frame metrics. Codes: 0 session unavailable; 1 permission/session close
 - Frame lease: exactly-once return, exception cleanup, image-before-buffer release.
 - Gate: short, slow, CPU, wrong-size, dropped and missing-import streams rejected.
 - Backend: owner thread, invalid target, absent session, repeated failure/start/stop.
-- Private mock D-Bus portal: requests/responses, cancellation at Start, exactly-once
-  session close and repeated stop/destruction without GNOME or a GPU.
+- Presentation timing: future PTS, cadence, discontinuities, missing/invalid,
+  duplicate/backwards timestamps and integer extremes without a GPU.
+- Private mock D-Bus portal: cancellation at CreateSession, SelectSources and Start,
+  exactly-once session close, direct destruction and repeated stop without GNOME/GPU.
 - Existing Windows capture and NVENC readiness tests are unchanged.
 
 The mock-bus test requires local Unix socket permission. Run CTest outside this
@@ -92,8 +97,17 @@ not all-frame capture latency. The updated probe separately reports future PTS.
 
 An animated attempt imported 412 frames at ~39-42 FPS before portal session closure.
 Unselected attempts timed out cleanly at Start. These runs **do not pass 1080p60**.
-The user agreed to switch temporarily to 60 Hz for another animated, uninterrupted
-sample. That retest is pending. No WebRTC integration has started.
+The user switched to 60 Hz (GNOME reported 60.003536 Hz). A full 30-second animated
+retest delivered 1163 GPU-backed 1920x1080 XRGB8888 frames with modifier 0,
+zero local discards/sequence gaps and zero capture-module CPU/GPU copies.
+Average FPS was 38.7663; minimum one-second FPS was 34.9703. EGL import averaged
+0.272952 ms (max 1.38479 ms); negotiated frame rate was unspecified (0), max 60.
+1162 of 1163 PTS values were in the future; signed mean presentation age was
+-6.78433 ms, not measured capture-origin latency. Exit 3 correctly rejected the
+run. **The 1080p60 gate remains closed.** Producer cadence diagnostics were added
+after this retest and still need a live sample. Source rendering, compositor pacing
+and cross-device handling need isolation; low import time alone proves no cause.
+No WebRTC integration has started; captured-frame NVENC interop remains unverified.
 
 All 15 combined native tests passed locally with IPC access. Native formatting,
 GCC analysis and all five [capture CI jobs](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37005794506)

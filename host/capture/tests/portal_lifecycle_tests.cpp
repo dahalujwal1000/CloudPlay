@@ -65,6 +65,7 @@ class TestPortal final {
         worker_.join();
     }
     std::atomic<unsigned> closes{};
+    std::atomic<unsigned> denied_stage{2};
 
   private:
     static void method(GDBusConnection *bus, const gchar *sender, const gchar *, const gchar *,
@@ -89,7 +90,10 @@ class TestPortal final {
             g_variant_builder_add(&results, "{sv}", "session_handle",
                                   g_variant_new_string(session_path));
         g_dbus_method_invocation_return_value(invocation, g_variant_new("(o)", path.c_str()));
-        const guint code = std::string_view(name) == "Start" ? 1 : 0;
+        const auto stage = std::string_view(name) == "CreateSession"   ? 0U
+                           : std::string_view(name) == "SelectSources" ? 1U
+                                                                       : 2U;
+        const guint code = stage == server.denied_stage ? 1 : 0;
         g_dbus_connection_emit_signal(
             bus, sender, path.c_str(), "org.freedesktop.portal.Request", "Response",
             g_variant_new("(u@a{sv})", code, g_variant_builder_end(&results)), nullptr);
@@ -105,21 +109,35 @@ int main() {
     g_setenv("XDG_SESSION_TYPE", "wayland", true);
     {
         TestPortal server;
-        for (unsigned i = 0; i < 3; ++i) {
-            cloudplay::capture::PipeWireCapture capture;
-            try {
-                capture.start({});
-                throw std::runtime_error("Cancelled portal accepted");
-            } catch (const cloudplay::capture::FrameCaptureError &error) {
-                if (error.reason != cloudplay::capture::FrameCaptureFailure::PermissionDenied ||
-                    error.operation != "Start")
-                    throw std::runtime_error("Wrong portal cancellation diagnostic");
+        constexpr std::string_view stages[]{"CreateSession", "SelectSources", "Start"};
+        unsigned expected_closes{};
+        for (unsigned stage = 0; stage < 3; ++stage) {
+            server.denied_stage = stage;
+            for (unsigned i = 0; i < 3; ++i) {
+                {
+                    cloudplay::capture::PipeWireCapture capture;
+                    try {
+                        capture.start({});
+                        throw std::runtime_error("Cancelled portal accepted");
+                    } catch (const cloudplay::capture::FrameCaptureError &error) {
+                        if (error.reason !=
+                                cloudplay::capture::FrameCaptureFailure::PermissionDenied ||
+                            error.operation != stages[stage] || error.native_code != 1 ||
+                            capture.state() != cloudplay::capture::FrameCaptureState::Failed)
+                            throw std::runtime_error("Wrong portal cancellation diagnostic");
+                    }
+                    if (i != 0) {
+                        capture.stop();
+                        capture.stop();
+                        if (capture.state() != cloudplay::capture::FrameCaptureState::Stopped)
+                            throw std::runtime_error("Repeated stop failed");
+                    }
+                }
+                // CreateSession denial never grants a session to close.
+                expected_closes += stage == 0 ? 0 : 1;
+                if (server.closes != expected_closes)
+                    throw std::runtime_error("Portal session leaked or closed twice");
             }
-            capture.stop();
-            capture.stop();
-            if (server.closes != i + 1 ||
-                capture.state() != cloudplay::capture::FrameCaptureState::Stopped)
-                throw std::runtime_error("Portal session leaked or closed twice");
         }
     }
     g_test_dbus_down(test_bus);

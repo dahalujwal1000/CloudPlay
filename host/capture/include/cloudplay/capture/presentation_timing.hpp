@@ -18,10 +18,10 @@ class PresentationTiming final {
         const double age_ms = static_cast<double>(age_ns / 1000000.0L);
         ++metrics.presentation_age_samples;
         metrics.presentation_age_sum_ms += age_ms;
-        metrics.minimum_presentation_age_ms = metrics.presentation_age_samples == 1
-                                                 ? age_ms
-                                                 : std::min(metrics.minimum_presentation_age_ms,
-                                                            age_ms);
+        metrics.minimum_presentation_age_ms =
+            metrics.presentation_age_samples == 1
+                ? age_ms
+                : std::min(metrics.minimum_presentation_age_ms, age_ms);
         if (age_ms < 0)
             ++metrics.future_timestamps;
         else {
@@ -29,8 +29,7 @@ class PresentationTiming final {
             metrics.latency_sum_ms += age_ms;
             metrics.max_latency_ms = std::max(metrics.max_latency_ms, age_ms);
         }
-        if (!discontinuity && previous_ > 0 && pts > previous_ &&
-            pts - previous_ < 10000000000LL) {
+        if (!discontinuity && previous_ > 0 && pts > previous_ && pts - previous_ < 10000000000LL) {
             const double interval_ms = static_cast<double>(pts - previous_) / 1000000.0;
             ++metrics.presentation_intervals;
             metrics.presentation_interval_sum_ms += interval_ms;

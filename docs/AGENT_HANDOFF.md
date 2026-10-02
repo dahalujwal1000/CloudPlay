@@ -150,10 +150,12 @@ explicit HWND and duration; see the Windows checklist for the user's next action
 
 ## Next Work
 
-1. Complete Linux capture acceptance: retest continuous motion at 1920x1080/60 Hz,
-   leave sharing active for >=30 seconds, investigate cadence/import timing if
-   throughput remains below target. User agreed to switch temporarily to 60 Hz
-   and provide a ready message. Do not change display settings automatically.
+1. Complete Linux capture acceptance: the uninterrupted 60 Hz retest delivered
+   1163 GPU-backed frames over 30 seconds, averaging 38.7663 FPS, with no reported
+   drops/copies. EGL import averaged 0.272952 ms; the gate still fails.
+   Isolate source rendering/compositor pacing/cross-device handling. New producer
+   presentation-interval diagnostics need a live sample. Do not weaken the gate,
+   duplicate frames or change display settings automatically.
    Windows capture and its historical CI results remain valid but live acceptance
    is unverified; Windows tests are no longer the primary development gate.
 2. Verify captured-frame NVENC interoperability and required CUDA/OpenGL development
