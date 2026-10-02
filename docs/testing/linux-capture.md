@@ -174,6 +174,11 @@ Saved private PNG: `/tmp/cloudplay-capture-pixel-check.png`; reference:
 This validates this CPU-readable buffer path, not EGL texture sampling, asynchronous
 GPU reuse or NVENC input. Pixel-correct captured-frame encoding and sustained
 1080p60 remain gates; neither NVENC implementation nor WebRTC was advanced.
+Independent FFmpeg RGB24 decoding of both PNGs produced the same 6220800-byte
+frame MD5 `2ef828823e00896dc95f16d3f764def0`. Final snapshot source passed all
+16 combined tests, five default tests, clang-format 18, GCC `-fanalyzer`, and all
+five [CI jobs](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37009040112)
+at revision `8cd814514964c9596795229e73a5f05b7c227a7e`.
 
 All 15 combined native tests passed locally with IPC access. Native formatting,
 GCC analysis and all five [capture CI jobs](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37005794506)
