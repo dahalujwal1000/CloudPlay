@@ -224,8 +224,9 @@ struct PipeWireCapture::Impl {
                 fail(FrameCaptureFailure::UnsupportedFormat, "pipewire.expected_dmabuf");
                 return;
             }
-            const auto chunk_offset = !plane.chunk ? 0U : plane.maxsize
-                ? plane.chunk->offset % plane.maxsize : plane.chunk->offset;
+            const auto chunk_offset = !plane.chunk    ? 0U
+                                      : plane.maxsize ? plane.chunk->offset % plane.maxsize
+                                                      : plane.chunk->offset;
             if (plane.fd < 0 || plane.fd > INT_MAX || !plane.chunk || plane.chunk->stride <= 0 ||
                 plane.mapoffset > static_cast<std::uint32_t>(INT_MAX) ||
                 chunk_offset > static_cast<std::uint32_t>(INT_MAX) - plane.mapoffset ||

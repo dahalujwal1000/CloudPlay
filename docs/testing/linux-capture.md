@@ -7,6 +7,8 @@ The user installed the Fedora development prerequisites:
 
 ```sh
 sudo dnf install pipewire-devel glib2-devel mesa-libEGL-devel libdrm-devel
+# Optional pixel snapshot/reference comparison:
+sudo dnf install libpng-devel
 cmake -S . -B build/linux-capture -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCLOUDPLAY_LINUX_CAPTURE=ON
 cmake --build build/linux-capture
 ctest --test-dir build/linux-capture --output-on-failure
@@ -16,7 +18,7 @@ build/linux-capture/host/capture/cloudplay_linux_capture_probe --seconds 30
 Use the normal logged-in GNOME Wayland user, not sudo, SSH, a container or another
 user's bus. Session D-Bus and GPU device access are required. Sandbox IPC/device
 restrictions are distinct from driver failures. Linux capture plus NVENC readiness
-builds run 15 CTest cases. No encoder, CUDA Toolkit or WebRTC is needed here.
+builds run 16 CTest cases. No encoder, CUDA Toolkit or WebRTC is needed here.
 
 ## Consent and Gate
 
@@ -38,7 +40,7 @@ SDL_VIDEODRIVER=wayland ffplay -f lavfi -i testsrc2=size=1920x1080:rate=60 -an -
 
 Run the probe in another terminal and select that monitor. Escape closes the pattern.
 Do not close the selected window or stop sharing before the probe finishes.
-No screen/game content is saved or streamed.
+Normal FPS probes save no screen/game content and never stream it.
 
 Gate: >=30 seconds, >=29 one-second intervals, average >=59 FPS, every interval
 >=58 FPS, 1920x1080, all frames imported on NVIDIA, no local discards/sequence gaps,
@@ -63,7 +65,56 @@ time, not guaranteed capture origin. Future PTS values are counted; signed ages
 are reported rather than clamped to fake zero latency. Nonnegative age has a
 separate mean/max/count. Missing/implausible timestamps are excluded; absent
 means are null. Capture-origin latency is explicitly unverified. Internal driver,
-compositor and cross-GPU copies are unknown. No pixel-content/readback test runs.
+compositor and cross-GPU copies are unknown. CPU readback runs only when explicitly
+requested with `--snapshot`, separately from performance acceptance.
+
+## Pixel Snapshot
+
+Install libpng development headers and reconfigure/rebuild. Snapshot mode acquires
+one frame, copies RGB bytes while the producer buffer is still leased, then stops
+capture before PNG compression. Files are created with mode 0600 and existing
+files are never overwritten. Captures can contain private screen content: select
+only the synthetic pattern for these tests. Paths and raw pixels are not logged.
+
+```sh
+ffmpeg -f lavfi -i testsrc2=size=1920x1080:rate=60 -frames:v 1 -update 1 /tmp/cloudplay-reference.png
+SDL_VIDEODRIVER=wayland ffplay -loop 0 -i /tmp/cloudplay-reference.png -vf format=bgra -an -fs
+build/capture-and-nvenc/host/capture/cloudplay_linux_capture_probe --snapshot /tmp/cloudplay-new-capture.png --reference /tmp/cloudplay-reference.png
+```
+
+Select the reference monitor in the portal. Compare an immutable static reference,
+not an animated frame of unknown timestamp. FFmpeg `testsrc2` intentionally contains
+color bars, diagonal colored lines, and checkerboard regions: these shapes alone
+are not evidence of capture corruption.
+
+`capture.format` and `capture.buffer` report the exact SPA format/name, DRM FourCC,
+modifier, memory types/DMA-BUF status, plane count, map/chunk/effective offsets,
+strides, chunk/allocation sizes, data flags, crop and transform presence/values,
+and fence readiness. GPU frames are DMA-BUF storage with borrowed NVIDIA EGLImage
+views; the snapshot maps the DMA-BUF, not the EGLImage. EGL import alone is not
+pixel correctness. A failure emits the last buffer layout and a specific operation.
+
+Only one-plane, linear, packed 8-bit RGB/BGR is read on little-endian hosts.
+RGB bytes are reordered only as required by the negotiated FourCC; X/alpha is
+discarded for RGB comparison. No scaling, YUV conversion, rotation, crop repair,
+de-tiling guesses or color correction is performed. Row padding is skipped and
+the final row is bounds-checked against the actual FD allocation size.
+Nonidentity crop/transform, tiled/multiplane buffers, unavailable CPU mapping,
+and unsupported formats fail rather than producing a guessed image.
+
+The capture backend waits up to one second per DMA-BUF for POLLIN implicit write
+fence completion before EGL import. Explicit-sync timelines are not negotiated;
+if unexpectedly present they are rejected, not ignored. CPU reads are additionally
+bracketed by DMA_BUF_IOCTL_SYNC START/END READ, with bounded EINTR/EAGAIN retries.
+The lease prevents producer reuse until reading and sync cleanup complete.
+These follow [kernel DMA-BUF synchronization requirements](https://docs.kernel.org/driver-api/dma-buf.html)
+and [PipeWire sync negotiation](https://docs.pipewire.org/devel/page_dma_buf.html).
+
+Snapshot JSON reports one explicit CPU readback/repacking copy, mismatch count,
+maximum channel difference, resolution equality and `pixelCorrectVerified`.
+Exit 0 means saved (and exact RGB equality when `--reference` is supplied), not
+sustained capture acceptance; exit 3 means reference mismatch. No reference means
+pixel correctness remains unverified. PNG uses [libpng's simplified API](https://www.libpng.org/pub/png/libpng-manual.txt).
 
 Failures report a typed reason, operation, native numeric error where available
 and last frame metrics. Codes: 0 session unavailable; 1 permission/session closed;
@@ -73,6 +124,9 @@ and last frame metrics. Codes: 0 session unavailable; 1 permission/session close
 ## Tests
 
 - Frame lease: exactly-once return, exception cleanup, image-before-buffer release.
+- CPU snapshot: padding, nonzero offset, channel ordering, row orientation,
+  allocation bounds, unsupported layout/crop/transform, unsynchronized read rejection,
+  private PNG round trip and no overwrite; no GPU required.
 - Gate: short, slow, CPU, wrong-size, dropped and missing-import streams rejected.
 - Backend: owner thread, invalid target, absent session, repeated failure/start/stop.
 - Presentation timing: future PTS, cadence, discontinuities, missing/invalid,
@@ -108,6 +162,18 @@ run. **The 1080p60 gate remains closed.** Producer cadence diagnostics were adde
 after this retest and still need a live sample. Source rendering, compositor pacing
 and cross-device handling need isolation; low import time alone proves no cause.
 No WebRTC integration has started; captured-frame NVENC interop remains unverified.
+
+Controlled static-reference capture subsequently passed exact RGB comparison:
+1920x1080, SPA BGRx (8), DRM XRGB8888 (875713112), modifier 0, one SPA_DATA_DmaBuf
+plane (memory type 3), flags 1, stride 7680, map/chunk/effective offsets 0,
+chunk/allocation size 8294400, crop (0,0,1920,1080), no transform metadata, no
+explicit-sync metadata, implicit fences ready. CPU SYNC START/END succeeded.
+All 2073600 pixels matched: zero mismatched pixels and max channel difference 0.
+Saved private PNG: `/tmp/cloudplay-capture-pixel-check.png`; reference:
+`/tmp/cloudplay-testsrc2-reference.png`. These temporary artifacts are not committed.
+This validates this CPU-readable buffer path, not EGL texture sampling, asynchronous
+GPU reuse or NVENC input. Pixel-correct captured-frame encoding and sustained
+1080p60 remain gates; neither NVENC implementation nor WebRTC was advanced.
 
 All 15 combined native tests passed locally with IPC access. Native formatting,
 GCC analysis and all five [capture CI jobs](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37005794506)

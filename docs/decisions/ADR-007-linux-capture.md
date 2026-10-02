@@ -26,6 +26,8 @@ prevent producer reuse. Future asynchronous encoding needs owned GPU storage,
 bounded buffering and tested synchronization, not retained borrowed views.
 Only implicit DMA-BUF synchronization is negotiated; explicit-sync timelines are
 not advertised and the diagnostic issues no asynchronous GPU pixel reads.
+Wait for DMA-BUF POLLIN write-fence completion before import. Reject unexpected
+explicit-sync metadata rather than pretending to support its timeline protocol.
 
 ## Boundaries
 
@@ -34,9 +36,15 @@ CUDA registration, NVENC submission and encoding captured frames are not.
 The repo has readiness diagnostics and external FFmpeg capability checks, not a
 production encoder. Existing NVENC tests remain unchanged.
 
-No pixels are mapped, read back, saved, logged or streamed. Capture-module copy
-counts are zero; compositor/driver internal and cross-device copies are unknown.
+Normal capture maps/saves no pixels; capture-module copy counts are zero.
+An explicit diagnostic-only `--snapshot` maps a linear packed-RGB DMA-BUF with
+CPU SYNC START/END READ while leased, saves a private PNG, and optionally compares
+an immutable reference exactly. It reports its CPU copy separately and does not
+qualify as performance acceptance. Unsupported layout/crop/sync paths fail.
+Compositor/driver internal and cross-device copies remain unknown.
 WebRTC remains gated on stable 1080p60 GPU capture and encoder interoperability.
+NVENC integration also requires pixel-correct diagnostic frames; exact CPU RGB
+comparison passed on the controlled static reference, not yet EGL sampling/encoding.
 
 ## Sources
 
@@ -44,3 +52,4 @@ WebRTC remains gated on stable 1080p60 GPU capture and encoder interoperability.
 - [PipeWire DMA-BUF negotiation](https://docs.pipewire.org/devel/page_dma_buf.html)
 - [EGL import modifiers](https://registry.khronos.org/EGL/extensions/EXT/EGL_EXT_image_dma_buf_import_modifiers.txt)
 - [EGL/CUDA device identity](https://registry.khronos.org/EGL/extensions/NV/EGL_NV_device_cuda.txt)
+- [DMA-BUF CPU access and fences](https://docs.kernel.org/driver-api/dma-buf.html)

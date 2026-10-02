@@ -203,8 +203,8 @@ void log_buffer_diagnostics(const FrameBufferDiagnostics &d) {
         std::cout << "{\"memoryType\":" << d.memory_types[i] << ",\"dataFlags\":" << d.data_flags[i]
                   << ",\"isDmaBuf\":" << (d.memory_types[i] == SPA_DATA_DmaBuf ? "true" : "false")
                   << ",\"mapOffset\":" << d.map_offsets[i]
-                  << ",\"chunkOffset\":" << d.chunk_offsets[i]
-                  << ",\"effectiveOffset\":" << static_cast<std::uint64_t>(d.map_offsets[i]) +
+                  << ",\"chunkOffset\":" << d.chunk_offsets[i] << ",\"effectiveOffset\":"
+                  << static_cast<std::uint64_t>(d.map_offsets[i]) +
                          (d.max_sizes[i] ? d.chunk_offsets[i] % d.max_sizes[i] : d.chunk_offsets[i])
                   << ",\"chunkSize\":" << d.chunk_sizes[i] << ",\"maxSize\":" << d.max_sizes[i]
                   << ",\"stride\":" << d.strides[i] << '}';

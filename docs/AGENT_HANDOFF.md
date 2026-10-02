@@ -219,8 +219,9 @@ asks for one monitor/window with no persistent tokens or remote-input permission
 DMA-BUF modifiers are intersected with NVIDIA EGL/CUDA-device-0 support. All
 delivered descriptors/images/fds are borrowed during the synchronous consumer;
 GPU work must complete before returning. Images are destroyed before buffers
-are returned; no CPU readback or unbounded queue exists. The diagnostic does no
-GPU pixel reads, CUDA registration, conversion, encoding or WebRTC.
+are returned; no automatic CPU readback or unbounded queue exists. Opt-in diagnostic
+snapshots now map linear packed-RGB DMA-BUFs with fence/CPU synchronization and
+save private PNGs. No GPU pixel reads, CUDA registration, encoding or WebRTC exists.
 
 Observed: 1050 1920x1080 XRGB8888/linear DMA-BUFs imported in a completed 30-second
 run, ~35 FPS, zero recorded local drops/sequence gaps and zero capture-module
@@ -246,7 +247,16 @@ Final source verification: all 15 combined tests, all five default tests, format
 and GCC analysis pass. All five CI jobs also pass at final source revision
 `59a6b9705bc68076ca70e02987a1ef28acba7bec` in
 [final capture CI](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37006485726).
-The 60 Hz live retest remains pending the user's ready message.
+The 60 Hz retest completed at 38.7663 FPS (1163 frames/30 seconds); the gate failed.
+A subsequent static-reference PNG capture matched all 2073600 RGB pixels exactly.
+SPA BGRx (8), one linear DMA-BUF, 1920x1080, stride 7680, zero offsets,
+8294400-byte allocation, full-frame crop, no transform/explicit-sync metadata.
+Implicit POLLIN and CPU SYNC START/END completed. Pattern bars, diagonal lines,
+and checkerboards are intentional in the immutable FFmpeg reference.
+See `docs/testing/linux-capture.md` for snapshot commands, safety and limitations.
+The new snapshot test raises combined CTest count to 16. Windows and existing
+NVENC tests remain untouched. GPU sampling/NVENC interop and sustained 1080p60
+are still unverified; do not infer acceptance from this single exact CPU snapshot.
 The live readiness probe reports SDK/driver API 13.1 and interface ready. Its
 CTest cases exercise CLI handling and isolated fake-driver failure paths, without
 requiring a GPU in CI. Default domain tests still build without NVIDIA headers.
