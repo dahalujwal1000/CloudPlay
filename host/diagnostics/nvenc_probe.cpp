@@ -44,8 +44,9 @@ int fail(std::string_view reason, int status = 0) {
 
 int main(int argc, char **argv) {
     if (argc == 2 && std::string_view(argv[1]) == "--help") {
-        std::cout << "Usage: cloudplay_nvenc_probe\n"
-                     "Checks driver API compatibility only; does not verify a GPU encode session.\n";
+        std::cout
+            << "Usage: cloudplay_nvenc_probe\n"
+               "Checks driver API compatibility only; does not verify a GPU encode session.\n";
         return 0;
     }
     if (argc != 1)
@@ -56,7 +57,8 @@ int main(int argc, char **argv) {
         return fail("driver_library_unavailable");
     const auto get_version = driver.symbol<decltype(&NvEncodeAPIGetMaxSupportedVersion)>(
         "NvEncodeAPIGetMaxSupportedVersion");
-    const auto create = driver.symbol<decltype(&NvEncodeAPICreateInstance)>("NvEncodeAPICreateInstance");
+    const auto create =
+        driver.symbol<decltype(&NvEncodeAPICreateInstance)>("NvEncodeAPICreateInstance");
     if (!get_version || !create)
         return fail("driver_entry_point_unavailable");
 
@@ -68,8 +70,8 @@ int main(int argc, char **argv) {
     constexpr auto required = (NVENCAPI_MAJOR_VERSION << 4) | NVENCAPI_MINOR_VERSION;
     std::cout << "{\"event\":\"nvenc.api_version\",\"sdkMajor\":" << NVENCAPI_MAJOR_VERSION
               << ",\"sdkMinor\":" << NVENCAPI_MINOR_VERSION
-              << ",\"driverMajor\":" << (supported >> 4)
-              << ",\"driverMinor\":" << (supported & 15U) << "}\n";
+              << ",\"driverMajor\":" << (supported >> 4) << ",\"driverMinor\":" << (supported & 15U)
+              << "}\n";
     if (supported < required)
         return fail("driver_api_too_old");
 
