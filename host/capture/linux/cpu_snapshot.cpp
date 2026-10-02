@@ -152,9 +152,10 @@ CpuImage load_png(const std::string &path) {
 #ifdef CLOUDPLAY_HAVE_PNG
     png_image png{};
     png.version = PNG_IMAGE_VERSION;
-    const FrameLease lease(&png, nullptr, [](void *owner, void *) noexcept {
-        png_image_free(static_cast<png_image *>(owner));
-    });
+    struct Release {
+        png_image *image;
+        ~Release() { png_image_free(image); }
+    } release{&png};
     if (!png_image_begin_read_from_file(&png, path.c_str()) || png.width == 0 || png.height == 0 ||
         png.width > 8192 || png.height > 8192)
         error("snapshot.reference_png_header");
