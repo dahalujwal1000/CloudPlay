@@ -4,9 +4,10 @@ Last verified: 2026-10-02.
 
 ## Current Status
 
-TASK-001 Foundation is partially implemented. The portable C++ host foundation builds
-and its current tests pass on Linux. Android, signaling, CI, capture, encoding, and
-streaming have not been implemented. Do not mark TASK-001 complete yet.
+TASK-001 foundation scaffolding is implemented across the native host, Android, and
+signaling, with CI definitions. Final Windows/MSVC and GitHub CI execution remain
+unverified. Capture, encoding, streaming, and pairing have not been implemented.
+Do not mark TASK-001 fully accepted until its verification gates pass.
 
 Read `AGENTS.md`, `docs/TASKS.md`, the relevant architecture documents, and ADRs
 before continuing. Preserve the game-agnostic design and the existing subsystem
@@ -24,9 +25,15 @@ boundaries. Coordinate ownership using `docs/AI_AGENT_WORKFLOW.md`.
 | `host/app/main.cpp` | Command-line configuration and startup/shutdown smoke lifecycle |
 | `host/tests/core_tests.cpp` | Lifecycle, recovery transitions, configuration boundaries, log record checks |
 | `.clang-format`, `.editorconfig` | Initial formatting and editor conventions |
+| `.clang-tidy` | Native analyzer rules |
+| `android/` | Six modules, Kotlin lifecycle/configuration, transport contracts, Compose shell, tests, pinned toolchain/wrapper |
+| `signaling/` | Authenticated loopback HTTP/WebSocket diagnostics, validated config/messages, bounds, logging, tests, lockfile |
+| `.github/workflows/foundation.yml` | Linux/Windows native, native quality, signaling, and Android CI jobs |
+| `docs/BUILDING.md`, `docs/tasks/TASK-001-foundation.md` | Build commands and acceptance criteria |
 
 The build exposes `CloudPlay::Core` and `CloudPlay::Telemetry`. Other host modules
 remain planned; no placeholder implementation of hardware or external APIs exists.
+CMake minimum is now 3.25, matching preset schema version 6.
 
 ### Behavioral Contracts
 
@@ -62,30 +69,61 @@ The last test expects a failing exit code for a zero bitrate. The unit executabl
 uses a small throwing assertion helper; it does not depend on a third-party test
 framework. These tests do not verify hardware, resource cleanup, or live networking.
 
-Windows/MSVC builds have not run. Formatting/static analysis has not run;
-clang-format was unavailable. No CI workflow exists. The current directory was
-not a Git repository when checked during implementation; no commit was created.
+Additional successful local checks:
+
+- Native formatting: clang-format 18 dry-run with warnings as errors.
+- Native static analysis: GCC 16 `-fanalyzer` build. Clang-tidy 18 could not parse
+  the local GCC 16 standard headers; CI checks it with Ubuntu's compatible toolchain.
+- Signaling: `npm run check` (TypeScript, ESLint, Prettier, Node tests), plus direct
+  execution of `dist/test/server.test.js` reporting seven passing tests.
+- Android: JUnit core tests (four passed), and debug APK assembly.
+- Gradle wrapper JAR checksum matches the official Gradle 8.13 checksum; distribution
+  checksum is pinned in `gradle-wrapper.properties`.
+
+Android lint/format verification after the final resource changes is pending at the
+time of this update; consult the acceptance file for the latest completed result.
+Windows/MSVC and GitHub workflows have not run from this workspace. A local Git
+repository was initialized; this agent did not commit or push. Concurrently added
+`scripts/` autosync tooling and `.vscode/` settings are outside this foundation work
+and were not modified or activated by this agent.
+
+### Signaling Boundary
+
+`loadConfig` requires a random URL-safe bootstrap token; only loopback binds are
+accepted. Every endpoint/upgrade requires a bearer header. `/health` reports service
+health; `/v1/signaling` accepts only `service.status` version 1 with an empty payload
+and UUID request ID. Response capabilities are empty. Limits: 4096-byte messages,
+60 requests/upgrades per IP per minute, 60 messages per connection, 60-second socket
+lifetime, 16 KiB outbound buffering check. Active sockets terminate on shutdown.
+
+Pairing, SDP/ICE routing, session ownership/authorization, TLS, and persistent
+credentials must be implemented before making this a remote service. The APK does
+not connect to this bootstrap service. No credentials are embedded or stored.
+
+### Android Boundary
+
+Modules: app, core, networking, streaming, input, ui. The last three transport/input
+modules are contracts only. The core mirrors native transitions and exposes a
+read-only StateFlow; orchestration must serialize mutation. UI displays an empty
+device list. Backup/device-transfer exclusions and cleartext denial are configured.
+No emulator/device UI run has been verified.
 
 ## Next Work
 
-1. Finish TASK-001 before proceeding to capture. Align the CMake preset schema
-   version with the declared minimum CMake version, add Windows build instructions
-   and CI, run formatting/static analysis, and expand validation tests as needed.
-2. Create the Android Kotlin/Compose project with separated core, networking,
-   streaming, input, and UI ownership; add a pinned Gradle wrapper and unit tests.
-3. Create the TypeScript/Node/Fastify signaling foundation with strict configuration,
-   schema validation, authentication, safe logging, tests, and a dependency lockfile.
-   Define payload schemas before enabling signaling messages or control endpoints.
-4. Document concrete cleanup ownership and lifecycle transitions in architecture
-   and session protocol docs as implementation progresses. Add telemetry metric
-   contracts without claiming measurements that are not collected.
-5. After foundation verification, start TASK-002: Windows Graphics Capture to D3D11
-   textures. Then follow TASK-003 NVENC and TASK-004 PC-to-PC WebRTC.
+1. Complete final Android lint/format verification and run Windows/MSVC build/tests
+   using `docs/BUILDING.md`. Execute the defined GitHub workflow on the user's repo.
+2. Start TASK-002 after foundation verification: Windows Graphics Capture to D3D11
+   textures. Verify official Windows APIs and define callback/resource ownership.
+3. Continue TASK-003 NVENC, then TASK-004 PC-to-PC WebRTC. Keep media GPU-resident.
+4. Add actual cleanup and metrics as resources are introduced. State reducers alone
+   do not release input, capture, encoder, transport, or game resources.
+5. Define payload schemas and per-session authorization before implementing the
+   planned signaling messages. Bootstrap authentication is not device pairing.
 
 Pairing, credential storage, game launch, input transport, WebRTC, NVENC, and capture
 are all future work. State names and failure codes do not imply those features work.
-The attempted npm registry lookup eventually succeeded, but no Node dependencies
-were installed and no signaling files were created.
+See `docs/protocols/session-protocol.md` and `docs/protocols/signaling.md` for the
+implemented foundation contracts and their remaining limitations.
 
 ## User Hardware and Open Details
 
@@ -93,9 +131,11 @@ were installed and no signaling files were created.
 - Android: Android 16.
 - Still unconfirmed: Windows version, exact GPU VRAM/driver, Android model, and
   whether the user can execute builds on the Windows PC.
-- Local tools observed: CMake, Ninja, GCC, Node 22, npm, Java 25. No Gradle
-  installation or Windows SDK was available. Establish a compatible Android JDK
-  and SDK before claiming Android build verification.
+- Local tools: CMake, Ninja, GCC 16, Node 22.23.1, npm. Isolated Java 17, Gradle 8.13,
+  Android SDK platform 36/build-tools 35.0.0, and native format/analyzer tools were
+  downloaded under `/tmp` for verification. The default system Java is 25; use 17.
+- Temporary verification paths: `/tmp/cloudplay-jdk17`, `/tmp/cloudplay-android-sdk`,
+  `/tmp/cloudplay-gradle`, `/tmp/cloudplay-tools`. They are not repository dependencies.
 
-Request missing device/build details when needed for platform testing. No product
-decision is needed to continue the remaining foundation scaffolding.
+Request missing device/build details when needed for platform testing. No Windows
+SDK, NVIDIA SDK, or WebRTC SDK has been installed or integrated in this workspace.
