@@ -240,6 +240,11 @@ do not establish live 1080p60 or NVENC interoperability. No WebRTC work started.
 The final probe also reports negotiated/max FPS and mean/max EGL import time to
 distinguish producer cadence from import cost. Local ASan/UBSan was attempted but
 could not link: Fedora libasan/libubsan are absent. No sanitizer pass is claimed.
+Final source verification: all 15 combined tests, all five default tests, formatting
+and GCC analysis pass. All five CI jobs also pass at final source revision
+`59a6b9705bc68076ca70e02987a1ef28acba7bec` in
+[final capture CI](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37006485726).
+The 60 Hz live retest remains pending the user's ready message.
 The live readiness probe reports SDK/driver API 13.1 and interface ready. Its
 CTest cases exercise CLI handling and isolated fake-driver failure paths, without
 requiring a GPU in CI. Default domain tests still build without NVIDIA headers.

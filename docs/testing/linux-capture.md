@@ -100,3 +100,6 @@ GCC analysis and all five [capture CI jobs](https://github.com/dahalujwal1000/Cl
 passed at revision `fb5bbbcbd5ed8dd6ff563ea2cfbbadaf4947e9a6`.
 Local ASan/UBSan configuration was attempted but cannot link because Fedora
 `libasan` and `libubsan` are not installed; no sanitizer pass is claimed.
+All five [final source CI jobs](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37006485726)
+passed at `59a6b9705bc68076ca70e02987a1ef28acba7bec`, including the final import/FPS
+metrics. All 15 combined and five default tests pass locally.
