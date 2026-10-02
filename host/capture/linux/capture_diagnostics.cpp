@@ -138,7 +138,7 @@ int run_capture_diagnostics(int argc, char **argv) {
     } catch (const FrameCaptureError &error) {
         capture.stop();
         const auto stats = capture.metrics();
-        log_buffer_diagnostics(stats.buffer);
+        log_buffer_diagnostics(stats.buffer, true);
         std::cerr << "{\"event\":\"capture.diagnostic_failed\",\"operation\":\"" << error.operation
                   << "\",\"nativeCode\":" << error.native_code << ",\"received\":" << stats.received
                   << ",\"released\":" << stats.released << "}\n";

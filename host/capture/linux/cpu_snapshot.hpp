@@ -15,7 +15,7 @@ CpuImage unpack_linear_frame(const CapturedFrame &frame, std::span<const unsigne
 CpuImage read_cpu_snapshot(const CapturedFrame &frame);
 void save_png(const CpuImage &image, const std::string &path);
 CpuImage load_png(const std::string &path);
-void log_buffer_diagnostics(const FrameBufferDiagnostics &layout);
+void log_buffer_diagnostics(const FrameBufferDiagnostics &layout, bool include_fds = false);
 void log_frame_diagnostics(const CapturedFrame &frame);
 struct PixelComparison {
     bool same_size{};

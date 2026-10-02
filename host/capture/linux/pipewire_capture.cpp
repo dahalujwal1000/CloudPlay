@@ -264,6 +264,17 @@ struct PipeWireCapture::Impl {
             }
             frame.planes[i] = {static_cast<int>(plane.fd), plane.mapoffset + chunk_offset,
                                plane.chunk->stride};
+            if (buffer->n_datas == 1 &&
+                (options.cpu_capture || format.modifier == DRM_FORMAT_MOD_LINEAR)) {
+                const auto required =
+                    static_cast<std::uint64_t>(frame.height - 1) * plane.chunk->stride +
+                    static_cast<std::uint64_t>(frame.width) * 4;
+                if ((options.cpu_capture && !plane.chunk->size) ||
+                    (plane.chunk->size && plane.chunk->size < required)) {
+                    fail(FrameCaptureFailure::UnsupportedFormat, "pipewire.short_chunk");
+                    return;
+                }
+            }
             if (options.cpu_capture) {
                 if (!plane.data || !plane.maxsize) {
                     fail(FrameCaptureFailure::UnsupportedFormat,

@@ -179,7 +179,7 @@ CpuImage load_png(const std::string &path) {
 #endif
 }
 
-void log_buffer_diagnostics(const FrameBufferDiagnostics &d) {
+void log_buffer_diagnostics(const FrameBufferDiagnostics &d, bool include_fds) {
     const char *name = "unsupported";
     switch (d.spa_format) {
     case SPA_VIDEO_FORMAT_BGRx:
@@ -220,7 +220,10 @@ void log_buffer_diagnostics(const FrameBufferDiagnostics &d) {
                   << static_cast<std::uint64_t>(d.map_offsets[i]) +
                          (d.max_sizes[i] ? d.chunk_offsets[i] % d.max_sizes[i] : d.chunk_offsets[i])
                   << ",\"chunkSize\":" << d.chunk_sizes[i] << ",\"maxSize\":" << d.max_sizes[i]
-                  << ",\"stride\":" << d.strides[i] << '}';
+                  << ",\"stride\":" << d.strides[i];
+        if (include_fds)
+            std::cout << ",\"fd\":" << d.fds[i];
+        std::cout << '}';
     }
     std::cout << "],\"cropPresent\":" << (d.crop_present ? "true" : "false") << ",\"crop\":["
               << d.crop_x << ',' << d.crop_y << ',' << d.crop_width << ',' << d.crop_height
@@ -253,7 +256,7 @@ void log_frame_diagnostics(const CapturedFrame &frame) {
                       ? "PipeWire dequeue ownership; mapped MemFd/MemPtr"
                       : "DMA-BUF POLLIN then CPU SYNC START/END READ")
               << "\",\"nv12Supported\":false,\"multiplaneCpuSupported\":false}\n";
-    log_buffer_diagnostics(frame.diagnostics);
+    log_buffer_diagnostics(frame.diagnostics, true);
 }
 
 PixelComparison compare_pixels(const CpuImage &actual, const CpuImage &expected) {
