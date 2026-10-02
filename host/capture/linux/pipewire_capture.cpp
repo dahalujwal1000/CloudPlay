@@ -4,6 +4,7 @@
 #include <chrono>
 #include <climits>
 #include <cloudplay/capture/pipewire_capture.hpp>
+#include <cloudplay/capture/presentation_timing.hpp>
 #include <drm_fourcc.h>
 #include <exception>
 #include <mutex>
@@ -52,6 +53,7 @@ struct PipeWireCapture::Impl {
     const Consumer *consumer{};
     std::exception_ptr consumer_error;
     std::optional<std::uint64_t> last_sequence;
+    PresentationTiming presentation_timing;
     std::chrono::steady_clock::time_point deadline;
 
     void check() const {
@@ -196,24 +198,10 @@ struct PipeWireCapture::Impl {
             timespec now{};
             clock_gettime(CLOCK_MONOTONIC, &now);
             const auto current = static_cast<std::int64_t>(now.tv_sec) * 1000000000LL + now.tv_nsec;
-            if (header->pts > 0 && header->pts > current - 10000000000LL &&
-                header->pts < current + 10000000000LL) {
-                const double latency = static_cast<double>(current - header->pts) / 1000000.0;
-                ++metrics.presentation_age_samples;
-                metrics.presentation_age_sum_ms += latency;
-                metrics.minimum_presentation_age_ms =
-                    metrics.presentation_age_samples == 1
-                        ? latency
-                        : std::min(metrics.minimum_presentation_age_ms, latency);
-                if (latency < 0)
-                    ++metrics.future_timestamps;
-                else {
-                    ++metrics.latency_samples;
-                    metrics.latency_sum_ms += latency;
-                    metrics.max_latency_ms = std::max(metrics.max_latency_ms, latency);
-                }
-            }
-        }
+            presentation_timing.observe(metrics, header->pts, current,
+                                        (header->flags & SPA_META_HEADER_FLAG_DISCONT) != 0);
+        } else
+            presentation_timing = {};
         const auto import_start = std::chrono::steady_clock::now();
         const auto image = gpu->import(frame);
         const auto import_ms = std::chrono::duration<double, std::milli>(
@@ -263,6 +251,7 @@ void PipeWireCapture::start(const CaptureOptions &options) {
     self.metrics = {};
     self.failure.reset();
     self.last_sequence.reset();
+    self.presentation_timing = {};
     self.consumer_error = {};
     self.state = FrameCaptureState::Starting;
     try {

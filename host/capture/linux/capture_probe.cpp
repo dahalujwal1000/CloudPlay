@@ -103,7 +103,15 @@ int main(int argc, char **argv) {
                              static_cast<double>(stats.presentation_age_samples);
         else
             std::cout << "null";
-        std::cout << ",\"negotiatedFps\":" << stats.negotiated_fps
+        std::cout << ",\"presentationIntervals\":" << stats.presentation_intervals
+                  << ",\"meanPresentationIntervalMs\":";
+        if (stats.presentation_intervals)
+            std::cout << stats.presentation_interval_sum_ms /
+                             static_cast<double>(stats.presentation_intervals);
+        else
+            std::cout << "null";
+        std::cout << ",\"maxPresentationIntervalMs\":" << stats.max_presentation_interval_ms
+                  << ",\"negotiatedFps\":" << stats.negotiated_fps
                   << ",\"negotiatedMaxFps\":" << stats.negotiated_max_fps
                   << ",\"meanGpuImportMs\":";
         if (stats.gpu_imports)
