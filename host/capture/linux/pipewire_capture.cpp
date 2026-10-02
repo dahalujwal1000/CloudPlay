@@ -7,8 +7,8 @@
 #include <cloudplay/capture/presentation_timing.hpp>
 #include <drm_fourcc.h>
 #include <exception>
-#include <mutex>
 #include <iostream>
+#include <mutex>
 #include <optional>
 #include <pipewire/pipewire.h>
 #include <poll.h>
@@ -141,8 +141,9 @@ struct PipeWireCapture::Impl {
         params[0] = static_cast<spa_pod *>(spa_pod_builder_add_object(
             &builder, SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers, SPA_PARAM_BUFFERS_buffers,
             SPA_POD_CHOICE_RANGE_Int(4, 2, 8), SPA_PARAM_BUFFERS_dataType,
-            SPA_POD_CHOICE_FLAGS_Int(options.cpu_capture ? (1 << SPA_DATA_MemFd) | (1 << SPA_DATA_MemPtr)
-                                                        : (1 << SPA_DATA_DmaBuf))));
+            SPA_POD_CHOICE_FLAGS_Int(options.cpu_capture
+                                         ? (1 << SPA_DATA_MemFd) | (1 << SPA_DATA_MemPtr)
+                                         : (1 << SPA_DATA_DmaBuf))));
         params[1] = static_cast<spa_pod *>(
             spa_pod_builder_add_object(&builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
                                        SPA_PARAM_META_type, SPA_POD_Id(SPA_META_Header),
@@ -243,7 +244,8 @@ struct PipeWireCapture::Impl {
         for (std::uint32_t i = 0; i < buffer->n_datas; ++i) {
             const auto &plane = buffer->datas[i];
             if ((!options.cpu_capture && plane.type != SPA_DATA_DmaBuf) ||
-                (options.cpu_capture && plane.type != SPA_DATA_MemFd && plane.type != SPA_DATA_MemPtr)) {
+                (options.cpu_capture && plane.type != SPA_DATA_MemFd &&
+                 plane.type != SPA_DATA_MemPtr)) {
                 ++metrics.cpu_frames;
                 ++metrics.discarded;
                 fail(FrameCaptureFailure::UnsupportedFormat, "pipewire.expected_dmabuf");
@@ -252,9 +254,8 @@ struct PipeWireCapture::Impl {
             const auto chunk_offset = !plane.chunk    ? 0U
                                       : plane.maxsize ? plane.chunk->offset % plane.maxsize
                                                       : plane.chunk->offset;
-            if ((!options.cpu_capture && plane.fd < 0) || plane.fd > INT_MAX ||
-                !plane.chunk || plane.chunk->stride <= 0 ||
-                plane.mapoffset > static_cast<std::uint32_t>(INT_MAX) ||
+            if ((!options.cpu_capture && plane.fd < 0) || plane.fd > INT_MAX || !plane.chunk ||
+                plane.chunk->stride <= 0 || plane.mapoffset > static_cast<std::uint32_t>(INT_MAX) ||
                 chunk_offset > static_cast<std::uint32_t>(INT_MAX) - plane.mapoffset ||
                 (plane.chunk->flags & SPA_CHUNK_FLAG_CORRUPTED)) {
                 ++metrics.discarded;
@@ -265,7 +266,8 @@ struct PipeWireCapture::Impl {
                                plane.chunk->stride};
             if (options.cpu_capture) {
                 if (!plane.data || !plane.maxsize) {
-                    fail(FrameCaptureFailure::UnsupportedFormat, "pipewire.cpu_mapping_unavailable");
+                    fail(FrameCaptureFailure::UnsupportedFormat,
+                         "pipewire.cpu_mapping_unavailable");
                     return;
                 }
                 frame.planes[i].offset = chunk_offset;
@@ -438,8 +440,8 @@ void PipeWireCapture::start(const CaptureOptions &options) {
         const spa_fraction rate{options.fps, 1};
         const spa_fraction minimum_rate{0, 1};
         for (const auto &entry : formats) {
-            const auto modifiers = options.cpu_capture ? std::vector<std::uint64_t>{}
-                                                      : self.gpu->modifiers(entry.drm);
+            const auto modifiers =
+                options.cpu_capture ? std::vector<std::uint64_t>{} : self.gpu->modifiers(entry.drm);
             if (!options.cpu_capture && modifiers.empty())
                 continue;
             spa_pod_frame object;
@@ -454,22 +456,21 @@ void PipeWireCapture::start(const CaptureOptions &options) {
                                 SPA_POD_CHOICE_RANGE_Fraction(&rate, &minimum_rate, &rate),
                                 SPA_FORMAT_VIDEO_maxFramerate, SPA_POD_Fraction(&rate), 0);
             if (!options.cpu_capture) {
-            spa_pod_builder_prop(&builder, SPA_FORMAT_VIDEO_modifier,
-                                 SPA_POD_PROP_FLAG_MANDATORY | SPA_POD_PROP_FLAG_DONT_FIXATE);
-            spa_pod_builder_push_choice(&builder, &choice, SPA_CHOICE_Enum, 0);
-            spa_pod_builder_long(&builder, static_cast<std::int64_t>(modifiers.front()));
-            for (auto modifier : modifiers)
-                spa_pod_builder_long(&builder, static_cast<std::int64_t>(modifier));
-            spa_pod_builder_pop(&builder, &choice);
+                spa_pod_builder_prop(&builder, SPA_FORMAT_VIDEO_modifier,
+                                     SPA_POD_PROP_FLAG_MANDATORY | SPA_POD_PROP_FLAG_DONT_FIXATE);
+                spa_pod_builder_push_choice(&builder, &choice, SPA_CHOICE_Enum, 0);
+                spa_pod_builder_long(&builder, static_cast<std::int64_t>(modifiers.front()));
+                for (auto modifier : modifiers)
+                    spa_pod_builder_long(&builder, static_cast<std::int64_t>(modifier));
+                spa_pod_builder_pop(&builder, &choice);
             }
             params.push_back(static_cast<spa_pod *>(spa_pod_builder_pop(&builder, &object)));
         }
         if (params.empty())
             throw FrameCaptureError(FrameCaptureFailure::GpuImport);
-        const auto flags = static_cast<pw_stream_flags>(PW_STREAM_FLAG_AUTOCONNECT |
-                                                        PW_STREAM_FLAG_DONT_RECONNECT |
-                                                        PW_STREAM_FLAG_NO_CONVERT |
-                                                        (options.cpu_capture ? PW_STREAM_FLAG_MAP_BUFFERS : 0));
+        const auto flags = static_cast<pw_stream_flags>(
+            PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_DONT_RECONNECT | PW_STREAM_FLAG_NO_CONVERT |
+            (options.cpu_capture ? PW_STREAM_FLAG_MAP_BUFFERS : 0));
         if (pw_stream_connect(self.stream, PW_DIRECTION_INPUT,
                               self.portal->serial().empty() ? self.portal->node() : PW_ID_ANY,
                               flags, params.data(), static_cast<std::uint32_t>(params.size())) < 0)

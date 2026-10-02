@@ -226,4 +226,60 @@ void log_buffer_diagnostics(const FrameBufferDiagnostics &d) {
               << "],\"transformPresent\":" << (d.transform_present ? "true" : "false")
               << ",\"transform\":" << d.transform << "}\n";
 }
+
+void log_frame_diagnostics(const CapturedFrame &frame) {
+    std::cout << "{\"event\":\"capture.frame_path\",\"width\":" << frame.width
+              << ",\"height\":" << frame.height << ",\"drmFourcc\":" << frame.drm_format
+              << ",\"modifier\":" << frame.modifier << ",\"timestampNs\":" << frame.timestamp_ns
+              << ",\"gpuBacked\":" << (frame.storage == FrameStorage::DmaBuf ? "true" : "false")
+              << ",\"pipewireCpuMapped\":" << (frame.cpu_data ? "true" : "false")
+              << ",\"planes\":[";
+    for (std::uint32_t i = 0; i < std::min(frame.plane_count, 4U); ++i) {
+        if (i)
+            std::cout << ',';
+        std::cout << "{\"fd\":" << frame.diagnostics.fds[i]
+                  << ",\"offset\":" << frame.planes[i].offset
+                  << ",\"stride\":" << frame.planes[i].stride << '}';
+    }
+    std::cout << "],\"syncPath\":\""
+              << (frame.storage == FrameStorage::CpuMemory
+                      ? "PipeWire dequeue ownership; mapped MemFd/MemPtr"
+                      : "DMA-BUF POLLIN then CPU SYNC START/END READ")
+              << "\",\"nv12Supported\":false,\"multiplaneCpuSupported\":false}\n";
+    log_buffer_diagnostics(frame.diagnostics);
+}
+
+PixelComparison compare_pixels(const CpuImage &actual, const CpuImage &expected) {
+    PixelComparison comparison;
+    comparison.same_size = actual.width == expected.width && actual.height == expected.height &&
+                           actual.rgb.size() == expected.rgb.size() && !actual.rgb.empty();
+    if (!comparison.same_size)
+        return comparison;
+    for (std::size_t i = 0; i < actual.rgb.size(); i += 3) {
+        bool mismatch{};
+        for (unsigned c = 0; c < 3; ++c) {
+            const auto difference = static_cast<unsigned>(
+                std::abs(static_cast<int>(actual.rgb[i + c]) - expected.rgb[i + c]));
+            comparison.max_difference = std::max(comparison.max_difference, difference);
+            mismatch = mismatch || difference != 0;
+        }
+        comparison.mismatched_pixels += mismatch ? 1 : 0;
+    }
+    return comparison;
+}
+
+CpuImage make_reference_pattern() {
+    CpuImage image{1920, 1080, std::vector<unsigned char>(1920 * 1080 * 3)};
+    constexpr unsigned char colors[8][3]{{255, 255, 255}, {255, 0, 0},   {0, 255, 0},   {0, 0, 255},
+                                         {255, 255, 0},   {0, 255, 255}, {255, 0, 255}, {0, 0, 0}};
+    for (std::uint32_t y = 0; y < image.height; ++y)
+        for (std::uint32_t x = 0; x < image.width; ++x) {
+            const auto index = (static_cast<std::size_t>(y) * image.width + x) * 3;
+            for (unsigned c = 0; c < 3; ++c)
+                image.rgb[index + c] = (y < 8 || y >= 1072 || x < 8 || x >= 1912) ? 255
+                                       : (y >= 538 && y < 542)                    ? 128
+                                                               : colors[x / 240][c];
+        }
+    return image;
+}
 } // namespace cloudplay::capture
