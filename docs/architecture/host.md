@@ -12,8 +12,9 @@ Owns application lifecycle and orchestration.
 Pure domain models, interfaces, state machines, and configuration.
 
 ### Host.Capture
-Platform-specific acquisition. Linux capture and GPU interoperability are pending
-design validation; Windows uses Windows Graphics Capture and D3D11.
+Linux uses the ScreenCast portal and PipeWire DMA-BUFs behind IFrameCapture,
+with NVIDIA EGL import validation. Sustained 1080p60 and NVENC interoperability
+are pending. Windows uses the preserved Windows Graphics Capture/D3D11 backend.
 
 ### Host.Encoder
 NVIDIA hardware encoding. Initial codec: H.264.

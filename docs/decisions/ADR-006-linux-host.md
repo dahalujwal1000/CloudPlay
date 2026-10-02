@@ -25,5 +25,7 @@ ADR-003 still describes the Windows backend, not Linux capture.
 
 ## Current Scope
 
-Only SDK interface setup and readiness diagnostics are added now. There is no Linux
-capture, production encoder, WebRTC media path, or game compatibility claim yet.
+The original decision introduced SDK/readiness setup. ADR-007 now adds Linux
+portal/PipeWire DMA-BUF capture and NVIDIA EGL import diagnostics. Sustained
+1080p60 acceptance is pending; no production encoder, WebRTC media path or game
+compatibility is claimed.

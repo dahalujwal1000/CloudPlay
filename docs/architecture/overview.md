@@ -25,7 +25,8 @@
 
 Media should flow peer-to-peer where possible. Signaling exchanges session metadata, SDP and ICE candidates; it should not proxy normal video.
 
-Linux is primary under ADR-006. Linux capture/GPU interoperability is not implemented;
+Linux is primary under ADR-006. Portal/PipeWire capture and NVIDIA EGL imports are
+implemented under ADR-007; sustained 1080p60 and NVENC interoperability are pending;
 the retained Windows backend uses WGC/D3D11. Diagram components are architectural
 targets, not a claim of an operational streaming pipeline.
 

@@ -9,8 +9,10 @@ including hosted Windows/MSVC build/tests. TASK-002 now has a Windows Graphics
 Capture module and diagnostic; live GPU acceptance remains
 unverified. The user changed the primary host to Fedora Linux (ADR-006).
 Linux SDK interface setup and NVENC readiness diagnostics are now available;
-live synthetic H.264/HEVC hardware checks pass. Production encoding, Linux
-capture, streaming, and pairing have not been implemented.
+live synthetic H.264/HEVC hardware checks pass. Linux portal/PipeWire capture is
+implemented behind IFrameCapture and imports live 1080p DMA-BUFs on NVIDIA.
+The sustained 1080p60 gate has NOT passed (observed 35-42 FPS). Production encoding,
+captured-frame NVENC interoperability, streaming, and pairing are not implemented.
 
 Read `AGENTS.md`, `docs/TASKS.md`, the relevant architecture documents, and ADRs
 before continuing. Preserve the game-agnostic design and the existing subsystem
@@ -37,6 +39,8 @@ boundaries. Coordinate ownership using `docs/AI_AGENT_WORKFLOW.md`.
 | `docs/architecture/capture.md`, `docs/testing/capture.md` | Capture ownership and hardware acceptance checklist |
 | `host/diagnostics/` | Optional Linux NVENC driver API readiness probe, no encode session |
 | `docs/decisions/ADR-006-linux-host.md`, `docs/testing/linux-nvenc.md` | Linux-first decision, SDK setup and observed hardware checks |
+| `host/capture/linux/`, `frame_capture.hpp`, `capture_acceptance.hpp`, capture tests | Owner-thread portal/PipeWire capture, NVIDIA EGL import, diagnostic, shutdown/gate tests |
+| `docs/decisions/ADR-007-linux-capture.md`, `docs/testing/linux-capture.md` | GPU frame ownership, consent, diagnostics and sustained acceptance gate |
 
 The build exposes `CloudPlay::Core`, `CloudPlay::Telemetry`, and on Windows
 `CloudPlay::Capture`. Other host modules
@@ -72,9 +76,10 @@ cmake --build --preset dev
 ctest --preset dev
 ```
 
-All four current Linux tests passed: `host.core`, `host.smoke`,
-`host.invalid_config`, and `capture.frame_policy`.
-The last test expects a failing exit code for a zero bitrate. The unit executable
+The original four Linux tests passed: `host.core`, `host.smoke`,
+`host.invalid_config`, and `capture.frame_policy`; the default build now also
+includes `capture.frame_lease`. `host.invalid_config` expects a failing exit code
+for a zero bitrate. The unit executable
 uses a small throwing assertion helper; it does not depend on a third-party test
 framework. These tests do not verify hardware, resource cleanup, or live networking.
 
@@ -144,13 +149,16 @@ explicit HWND and duration; see the Windows checklist for the user's next action
 
 ## Next Work
 
-1. Follow ADR-006: Linux/Fedora is now primary. Select consent-based Linux capture
-   and verify GPU-buffer interoperability/lifetimes before encoder implementation.
+1. Complete Linux capture acceptance: retest continuous motion at 1920x1080/60 Hz,
+   leave sharing active for >=30 seconds, investigate cadence/import timing if
+   throughput remains below target. User agreed to switch temporarily to 60 Hz
+   and provide a ready message. Do not change display settings automatically.
    Windows capture and its historical CI results remain valid but live acceptance
    is unverified; Windows tests are no longer the primary development gate.
-2. Complete Linux SDK/toolkit prerequisites, then TASK-003 production NVENC and
-   TASK-004 PC-to-PC WebRTC. Keep media GPU-resident. Do not treat the readiness
-   probe or FFmpeg test as an implemented CloudPlay encoder.
+2. Verify captured-frame NVENC interoperability and required CUDA/OpenGL development
+   prerequisites before TASK-003 production encoding. Keep media GPU-resident.
+   Do not treat EGL images as NVENC input handles or FFmpeg tests as an encoder.
+   TASK-004 WebRTC is explicitly gated until stable 1080p60 GPU capture; do not start it.
 3. Add actual cleanup and metrics as resources are introduced. State reducers alone
    do not release input, capture, encoder, transport, or game resources.
 4. Define payload schemas and per-session authorization before implementing the
@@ -194,6 +202,40 @@ CBR, no B-frames/lookahead and one-frame VBV in about 0.34 seconds. HEVC encoded
 No private content was captured; encoded output was discarded. This is a short
 capability check, not sustained performance or capture/streaming acceptance.
 See `docs/testing/linux-nvenc.md` for reproducible commands and limitations.
+
+### Linux Capture Boundary
+
+The Linux capture option is `CLOUDPLAY_LINUX_CAPTURE=ON`; it requires PipeWire,
+GIO Unix, EGL and libdrm headers installed by the user. Installed versions now
+include PipeWire 1.6.9 and GIO 2.88.3. Windows capture files and NVENC diagnostic
+tests were not modified. Build `build/capture-and-nvenc` enables both modules.
+
+One owner thread polls a restricted portal-provided PipeWire remote. Private
+GMainContext subscriptions are removed before callback storage dies. Startup
+asks for one monitor/window with no persistent tokens or remote-input permission.
+DMA-BUF modifiers are intersected with NVIDIA EGL/CUDA-device-0 support. All
+delivered descriptors/images/fds are borrowed during the synchronous consumer;
+GPU work must complete before returning. Images are destroyed before buffers
+are returned; no CPU readback or unbounded queue exists. The diagnostic does no
+GPU pixel reads, CUDA registration, conversion, encoding or WebRTC.
+
+Observed: 1050 1920x1080 XRGB8888/linear DMA-BUFs imported in a completed 30-second
+run, ~35 FPS, zero recorded local drops/sequence gaps and zero capture-module
+copies. An animated attempt imported 412 frames at ~39-42 FPS before session
+closure. Some unselected runs timed out at Start. The active monitor was 144 Hz.
+Capture has NOT passed sustained 1080p60. Compositor/cross-device copy counts and
+true capture-origin latency are unknown. Updated diagnostics report signed PTS
+presentation age and future timestamps separately; do not claim PTS age is an
+all-frame capture-origin latency measurement.
+
+All 15 combined native tests passed outside the IPC-restricted sandbox, including
+unchanged NVENC readiness tests, frame leases/gate cases, owner-thread/repeated
+shutdown checks and a private mock D-Bus portal cancellation/cleanup test.
+Native formatting and GCC `-fanalyzer` passed for the Linux backend. All five CI
+jobs passed at `fb5bbbcbd5ed8dd6ff563ea2cfbbadaf4947e9a6` in
+[Linux capture CI](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37005794506),
+including Windows preservation, Linux builds/tests and clang-tidy. These CI tests
+do not establish live 1080p60 or NVENC interoperability. No WebRTC work started.
 The live readiness probe reports SDK/driver API 13.1 and interface ready. Its
 CTest cases exercise CLI handling and isolated fake-driver failure paths, without
 requiring a GPU in CI. Default domain tests still build without NVIDIA headers.

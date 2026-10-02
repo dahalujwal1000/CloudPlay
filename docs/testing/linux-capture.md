@@ -93,3 +93,7 @@ An animated attempt imported 412 frames at ~39-42 FPS before portal session clos
 Unselected attempts timed out cleanly at Start. These runs **do not pass 1080p60**.
 The user agreed to switch temporarily to 60 Hz for another animated, uninterrupted
 sample. That retest is pending. No WebRTC integration has started.
+
+All 15 combined native tests passed locally with IPC access. Native formatting,
+GCC analysis and all five [capture CI jobs](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37005794506)
+passed at revision `fb5bbbcbd5ed8dd6ff563ea2cfbbadaf4947e9a6`.
