@@ -132,6 +132,8 @@ Foundation header from the initial Windows build has been corrected. Native
 Linux/Windows and native-quality CI jobs pass for capture revision
 `e3d8fe73a6c765db4c35f7d03fadf44680325405` in
 [this run](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37000958387).
+Windows CTest reports six passed tests, including `capture.validation` and
+`capture.invalid_cli`; Linux has four passed tests.
 Live texture/resize/minimize/device-loss testing has not run. The probe accepts an
 explicit HWND and duration; see the Windows checklist for the user's next action.
 
