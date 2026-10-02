@@ -307,7 +307,6 @@ struct PipeWireCapture::Impl {
             presentation_timing = {};
         if (options.cpu_capture) {
             ++metrics.cpu_frames;
-            ++metrics.cpu_copies;
             state = FrameCaptureState::Delivering;
             try {
                 (*consumer)(frame);

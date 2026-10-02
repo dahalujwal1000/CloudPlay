@@ -21,6 +21,48 @@ int main() {
     const std::vector<unsigned char> expected{255, 0, 0, 0, 255, 0, 0, 0, 255, 255, 255, 255};
     if (image.rgb != expected)
         throw std::runtime_error("Stride, offset, channels or orientation incorrect");
+    for (auto fourcc :
+         {DRM_FORMAT_XRGB8888, DRM_FORMAT_ARGB8888, DRM_FORMAT_XBGR8888, DRM_FORMAT_ABGR8888}) {
+        frame.drm_format = fourcc;
+        const auto decoded = unpack_linear_frame(frame, bytes);
+        const bool bgr = fourcc == DRM_FORMAT_XRGB8888 || fourcc == DRM_FORMAT_ARGB8888;
+        if (decoded.rgb[0] != (bgr ? 255 : 0) || decoded.rgb[2] != (bgr ? 0 : 255))
+            throw std::runtime_error("Packed channel order incorrect");
+    }
+    frame.drm_format = DRM_FORMAT_XRGB8888;
+    auto cpu = frame;
+    cpu.storage = FrameStorage::CpuMemory;
+    cpu.cpu_data = bytes.data();
+    cpu.cpu_size = bytes.size();
+    auto owned = read_cpu_snapshot(cpu);
+    if (owned.rgb != expected)
+        throw std::runtime_error("CPU mapping interpretation incorrect");
+    auto producer = bytes;
+    cpu.cpu_data = producer.data();
+    owned = read_cpu_snapshot(cpu);
+    producer.fill(0);
+    if (owned.rgb != expected)
+        throw std::runtime_error("Owned CPU copy changed after producer reuse");
+    auto noisy = image;
+    noisy.rgb[4] ^= 1;
+    const auto diff = compare_pixels(noisy, image);
+    if (!diff.same_size || diff.mismatched_pixels != 1 || diff.max_difference != 1 ||
+        compare_pixels(image, image).mismatched_pixels != 0)
+        throw std::runtime_error("Single-pixel mismatch not detected");
+    auto malformed = image;
+    malformed.rgb.pop_back();
+    if (compare_pixels(malformed, malformed).same_size)
+        throw std::runtime_error("Malformed RGB image compared");
+    auto nv12 = frame;
+    nv12.drm_format = DRM_FORMAT_NV12;
+    bool rejected_nv12{};
+    try {
+        (void)unpack_linear_frame(nv12, bytes);
+    } catch (const FrameCaptureError &e) {
+        rejected_nv12 = e.operation == "snapshot.unsupported_fourcc";
+    }
+    if (!rejected_nv12)
+        throw std::runtime_error("NV12 interpreted as packed RGB");
     frame.drm_format = DRM_FORMAT_ABGR8888;
     if (unpack_linear_frame(frame, bytes).rgb[0] != 0 ||
         unpack_linear_frame(frame, bytes).rgb[2] != 255)

@@ -199,7 +199,8 @@ void log_buffer_diagnostics(const FrameBufferDiagnostics &d) {
     }
     std::cout << "{\"event\":\"capture.buffer\",\"spaFormat\":" << d.spa_format
               << ",\"spaFormatName\":\"" << name
-              << "\",\"requestedPath\":\"DMA-BUF -> NVIDIA EGLImage\",\"explicitSyncPresent\":"
+              << "\",\"requestedPath\":\"packed RGB capture; optional EGL "
+                 "import\",\"explicitSyncPresent\":"
               << (d.explicit_sync_present ? "true" : "false")
               << ",\"implicitFencesReady\":" << (d.implicit_fences_ready ? "true" : "false")
               << ",\"eglImageImported\":" << (d.egl_image_imported ? "true" : "false")
@@ -228,9 +229,15 @@ void log_buffer_diagnostics(const FrameBufferDiagnostics &d) {
 }
 
 void log_frame_diagnostics(const CapturedFrame &frame) {
+    const char *pixel_format = frame.drm_format == DRM_FORMAT_XRGB8888   ? "XRGB8888"
+                               : frame.drm_format == DRM_FORMAT_ARGB8888 ? "ARGB8888"
+                               : frame.drm_format == DRM_FORMAT_XBGR8888 ? "XBGR8888"
+                               : frame.drm_format == DRM_FORMAT_ABGR8888 ? "ABGR8888"
+                                                                         : "unsupported";
     std::cout << "{\"event\":\"capture.frame_path\",\"width\":" << frame.width
-              << ",\"height\":" << frame.height << ",\"drmFourcc\":" << frame.drm_format
-              << ",\"modifier\":" << frame.modifier << ",\"timestampNs\":" << frame.timestamp_ns
+              << ",\"height\":" << frame.height << ",\"pixelFormat\":\"" << pixel_format
+              << "\",\"drmFourcc\":" << frame.drm_format << ",\"modifier\":" << frame.modifier
+              << ",\"timestampNs\":" << frame.timestamp_ns
               << ",\"gpuBacked\":" << (frame.storage == FrameStorage::DmaBuf ? "true" : "false")
               << ",\"pipewireCpuMapped\":" << (frame.cpu_data ? "true" : "false")
               << ",\"planes\":[";
@@ -251,8 +258,11 @@ void log_frame_diagnostics(const CapturedFrame &frame) {
 
 PixelComparison compare_pixels(const CpuImage &actual, const CpuImage &expected) {
     PixelComparison comparison;
-    comparison.same_size = actual.width == expected.width && actual.height == expected.height &&
-                           actual.rgb.size() == expected.rgb.size() && !actual.rgb.empty();
+    comparison.same_size =
+        actual.width == expected.width && actual.height == expected.height && actual.width > 0 &&
+        actual.height > 0 && actual.width <= 8192 && actual.height <= 8192 &&
+        actual.rgb.size() == expected.rgb.size() &&
+        actual.rgb.size() == static_cast<std::size_t>(actual.width) * actual.height * 3;
     if (!comparison.same_size)
         return comparison;
     for (std::size_t i = 0; i < actual.rgb.size(); i += 3) {
