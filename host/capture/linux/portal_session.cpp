@@ -104,10 +104,10 @@ GVariant *PortalSession::request(const char *method, GVariant *parameters,
         if (closed)
             g_variant_unref(closed);
         throw FrameCaptureError(valid_handle ? FrameCaptureFailure::Timeout
-                                             : FrameCaptureFailure::Portal);
+                                             : FrameCaptureFailure::Portal, method);
     }
     if (response.code != 0)
-        throw FrameCaptureError(FrameCaptureFailure::PermissionDenied);
+        throw FrameCaptureError(FrameCaptureFailure::PermissionDenied, method, static_cast<int>(response.code));
     return g_variant_ref(response.results);
 }
 

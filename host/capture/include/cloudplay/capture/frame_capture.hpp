@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <functional>
 #include <stdexcept>
+#include <string>
+#include <string_view>
 
 namespace cloudplay::capture {
 
@@ -65,9 +67,11 @@ struct FrameCaptureMetrics {
 
 class FrameCaptureError : public std::runtime_error {
   public:
-    explicit FrameCaptureError(FrameCaptureFailure failure)
-        : std::runtime_error("Frame capture failed"), reason(failure) {}
+    explicit FrameCaptureError(FrameCaptureFailure failure, std::string_view stage = "capture", int code = 0)
+        : std::runtime_error("Frame capture failed"), reason(failure), operation(stage), native_code(code) {}
     FrameCaptureFailure reason;
+    std::string operation;
+    int native_code;
 };
 
 // Owner-thread API. Frames/images/fds are borrowed only during consume().

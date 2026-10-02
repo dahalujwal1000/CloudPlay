@@ -13,6 +13,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Linux Capture Dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update && sudo apt-get install -y libpipewire-0.3-dev libglib2.0-dev libegl1-mesa-dev libdrm-dev
+          echo "CLOUDPLAY_LINUX_CAPTURE=ON" >> "$GITHUB_ENV"
       - name: NVIDIA Interface Headers (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -22,7 +27,7 @@ jobs:
           unzip -n /tmp/nvenc-interface.zip -d .cache/nvidia
           echo "CLOUDPLAY_NVENC_INCLUDE_DIR=$PWD/.cache/nvidia/Video_Codec_Interface_13.1.15/Interface" >> "$GITHUB_ENV"
       - name: Configure
-        run: cmake -S . -B build/ci -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DCLOUDPLAY_NVENC_INCLUDE_DIR="${{ env.CLOUDPLAY_NVENC_INCLUDE_DIR }}"
+        run: cmake -S . -B build/ci -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DCLOUDPLAY_NVENC_INCLUDE_DIR="${{ env.CLOUDPLAY_NVENC_INCLUDE_DIR }}" -DCLOUDPLAY_LINUX_CAPTURE="${{ env.CLOUDPLAY_LINUX_CAPTURE }}"
       - name: Build
         run: cmake --build build/ci --config Debug
       - name: Test
@@ -31,7 +36,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y clang-format-18 clang-tidy-18 ninja-build
+      - run: sudo apt-get update && sudo apt-get install -y clang-format-18 clang-tidy-18 ninja-build libpipewire-0.3-dev libglib2.0-dev libegl1-mesa-dev libdrm-dev
       - name: NVIDIA Interface Headers
         run: |
           curl -fL --max-time 60 https://developer.nvidia.com/downloads/designworks/video-codec-sdk/secure/13.1/video_codec_interface_13.1.15.zip -o /tmp/nvenc-interface.zip
@@ -41,7 +46,7 @@ jobs:
           echo "CLOUDPLAY_NVENC_INCLUDE_DIR=$PWD/.cache/nvidia/Video_Codec_Interface_13.1.15/Interface" >> "$GITHUB_ENV"
       - name: Format
         run: find host -type f \( -name '*.cpp' -o -name '*.hpp' \) -print0 | xargs -0 clang-format-18 --dry-run --Werror
-      - run: cmake --preset dev -DCLOUDPLAY_NVENC_INCLUDE_DIR="${{ env.CLOUDPLAY_NVENC_INCLUDE_DIR }}"
+      - run: cmake --preset dev -DCLOUDPLAY_NVENC_INCLUDE_DIR="${{ env.CLOUDPLAY_NVENC_INCLUDE_DIR }}" -DCLOUDPLAY_LINUX_CAPTURE=ON
       - name: Analyze
         run: find host -name '*.cpp' ! -path 'host/capture/windows/*' -print0 | xargs -0 clang-tidy-18 -p build/native
   signaling:

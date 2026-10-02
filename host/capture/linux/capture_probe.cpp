@@ -98,6 +98,7 @@ int main(int argc, char **argv) {
     } catch (const cloudplay::capture::FrameCaptureError &error) {
         capture.stop();
         std::cerr << "{\"event\":\"capture.failed\",\"reason\":" << static_cast<int>(error.reason)
+                  << ",\"operation\":\"" << error.operation << "\",\"nativeCode\":" << error.native_code
                   << ",\"stable1080p60Gpu\":false}\n";
         return 1;
     } catch (...) {
