@@ -73,6 +73,11 @@ cmd_start() {
 }
 
 cmd_stop() {
+    if have_systemd && systemd_active; then
+        systemctl --user stop "$SYSTEMD_UNIT"
+        echo "autosync (systemd) stopped"
+        return 0
+    fi
     if ! pid_alive; then
         echo "autosync is not running"
         rm -f "$PID_FILE"
@@ -94,7 +99,14 @@ cmd_stop() {
 }
 
 cmd_status() {
-    if pid_alive; then
+    if have_systemd; then
+        if systemd_active; then
+            echo "autosync: running under systemd ($SYSTEMD_UNIT)"
+            systemctl --user status "$SYSTEMD_UNIT" --no-pager 2>/dev/null | sed -n '3,6p'
+        else
+            echo "autosync: systemd unit installed but inactive ($SYSTEMD_UNIT)"
+        fi
+    elif pid_alive; then
         echo "autosync: running (pid $(cat "$PID_FILE"))"
     else
         echo "autosync: stopped"
@@ -109,6 +121,10 @@ cmd_status() {
 
 cmd_logs() {
     local n="${1:-40}"
+    if have_systemd && systemd_active; then
+        journalctl --user -u "$SYSTEMD_UNIT" --no-pager -n "$n"
+        return 0
+    fi
     [[ -f "$LOG_FILE" ]] && tail -n "$n" "$LOG_FILE" || echo "no log file yet"
 }
 
@@ -132,7 +148,15 @@ shift || true
 case "$action" in
     start)   cmd_start "$@" ;;
     stop)    cmd_stop ;;
-    restart) cmd_stop; cmd_start "$@" ;;
+    restart)
+        if have_systemd && systemd_active; then
+            systemctl --user restart "$SYSTEMD_UNIT"
+            echo "autosync (systemd) restarted"
+        else
+            cmd_stop
+            cmd_start "$@"
+        fi
+        ;;
     status)  cmd_status ;;
     logs)    cmd_logs "$@" ;;
     once)    cmd_once "$@" ;;

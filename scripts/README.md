@@ -88,6 +88,10 @@ journalctl --user -u cloudplay-autosync.service -f
 If you prefer to run it only inside a terminal session, use
 `./scripts/autosync.sh start` instead.
 
+When the systemd unit is installed and active, `./scripts/autosync.sh status`,
+`stop`, `restart` and `logs` automatically delegate to `systemctl --user`, so
+you can never end up with two competing daemons.
+
 ## Notes & caveats
 
 * Hooks live in `.git/hooks/` and are **not** tracked by git; run
