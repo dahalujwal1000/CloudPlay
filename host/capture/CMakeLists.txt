@@ -12,8 +12,6 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_library(cloudplay_linux_capture linux/pipewire_capture.cpp linux/portal_session.cpp linux/gpu_import.cpp)
     add_library(CloudPlay::LinuxCapture ALIAS cloudplay_linux_capture)
     target_link_libraries(cloudplay_linux_capture PUBLIC cloudplay_capture_policy PRIVATE cloudplay_options PkgConfig::PIPEWIRE PkgConfig::GIO PkgConfig::EGL PkgConfig::DRM)
-    # SPA's public C pod-builder macros use GNU compound literals.
-    target_compile_options(cloudplay_linux_capture PRIVATE -Wno-pedantic)
     add_executable(cloudplay_linux_capture_probe linux/capture_probe.cpp)
     target_link_libraries(cloudplay_linux_capture_probe PRIVATE CloudPlay::LinuxCapture cloudplay_options)
     if(BUILD_TESTING)
