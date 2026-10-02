@@ -67,6 +67,7 @@ int run_capture_diagnostics(int argc, char **argv) {
             reference = load_png(reference_path);
         std::signal(SIGINT, cancel);
         std::signal(SIGTERM, cancel);
+        std::cerr << "Select the 1920x1080 reference monitor; keep the pattern visible.\n";
         capture.start({1920, 1080, 60, true, cpu});
         const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(seconds);
         unsigned checked{}, mismatches{};
@@ -77,6 +78,9 @@ int run_capture_diagnostics(int argc, char **argv) {
             const bool delivered = capture.poll([&](const CapturedFrame &frame) {
                 log_frame_diagnostics(frame);
                 try {
+                    if (!image.rgb.empty())
+                        throw FrameCaptureError(FrameCaptureFailure::Consumer,
+                                                "diagnostic.multiple_deliveries_in_poll");
                     image = read_cpu_snapshot(frame);
                     owned_checksum = checksum(image);
                     std::cout
@@ -130,7 +134,9 @@ int run_capture_diagnostics(int argc, char **argv) {
         const bool exact = complete && !reference_path.empty() && mismatches == 0;
         std::cout << "{\"event\":\"capture.diagnostic_summary\",\"framesChecked\":" << checked
                   << ",\"mismatchedFrames\":" << mismatches << ",\"received\":" << stats.received
-                  << ",\"released\":" << stats.released
+                  << ",\"released\":" << stats.released << ",\"delivered\":" << stats.delivered
+                  << ",\"discarded\":" << stats.discarded
+                  << ",\"sequenceGaps\":" << stats.sequence_gaps
                   << ",\"pixelCorrectVerified\":" << (exact ? "true" : "false")
                   << ",\"stable1080p60Gpu\":false,"
                      "\"nvencInteropVerified\":false}\n";
