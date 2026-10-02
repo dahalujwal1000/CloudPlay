@@ -13,6 +13,7 @@ constexpr auto xml = R"(<node>
 <method name='CreateSession'><arg type='a{sv}' direction='in'/><arg type='o' direction='out'/></method>
 <method name='SelectSources'><arg type='o' direction='in'/><arg type='a{sv}' direction='in'/><arg type='o' direction='out'/></method>
 <method name='Start'><arg type='o' direction='in'/><arg type='s' direction='in'/><arg type='a{sv}' direction='in'/><arg type='o' direction='out'/></method>
+<property name='AvailableCursorModes' type='u' access='read'/>
 </interface><interface name='org.freedesktop.portal.Session'><method name='Close'/></interface>
 </node>)";
 constexpr auto session_path = "/org/freedesktop/portal/desktop/session/test/session";
@@ -35,7 +36,7 @@ class TestPortal final {
             auto *bus = g_dbus_connection_new_for_address_sync(g_getenv("DBUS_SESSION_BUS_ADDRESS"),
                                                                flags, nullptr, nullptr, nullptr);
             auto *info = g_dbus_node_info_new_for_xml(xml, nullptr);
-            const GDBusInterfaceVTable callbacks{method, nullptr, nullptr, {nullptr}};
+            const GDBusInterfaceVTable callbacks{method, property, nullptr, {nullptr}};
             const auto screen_id = g_dbus_connection_register_object(
                 bus, "/org/freedesktop/portal/desktop", info->interfaces[0], &callbacks, this,
                 nullptr, nullptr);
@@ -66,8 +67,13 @@ class TestPortal final {
     }
     std::atomic<unsigned> closes{};
     std::atomic<unsigned> denied_stage{2};
+    std::atomic<unsigned> cursor_modes{3}, embedded_requests{};
 
   private:
+    static GVariant *property(GDBusConnection *, const gchar *, const gchar *, const gchar *,
+                              const gchar *, GError **, gpointer data) {
+        return g_variant_new_uint32(static_cast<TestPortal *>(data)->cursor_modes);
+    }
     static void method(GDBusConnection *bus, const gchar *sender, const gchar *, const gchar *,
                        const gchar *name, GVariant *parameters, GDBusMethodInvocation *invocation,
                        gpointer data) {
@@ -80,6 +86,11 @@ class TestPortal final {
         auto *options = g_variant_get_child_value(parameters, g_variant_n_children(parameters) - 1);
         const char *token{};
         g_variant_lookup(options, "handle_token", "&s", &token);
+        if (std::string_view(name) == "SelectSources") {
+            guint mode{};
+            if (g_variant_lookup(options, "cursor_mode", "u", &mode) && mode == 2)
+                ++server.embedded_requests;
+        }
         std::string peer(sender + 1);
         std::replace(peer.begin(), peer.end(), '.', '_');
         const auto path = "/org/freedesktop/portal/desktop/request/" + peer + "/" + token;
@@ -117,7 +128,9 @@ int main() {
                 {
                     cloudplay::capture::PipeWireCapture capture;
                     try {
-                        capture.start({});
+                        cloudplay::capture::CaptureOptions options;
+                        options.embedded_cursor = i == 2;
+                        capture.start(options);
                         throw std::runtime_error("Cancelled portal accepted");
                     } catch (const cloudplay::capture::FrameCaptureError &error) {
                         if (error.reason !=
@@ -139,6 +152,23 @@ int main() {
                     throw std::runtime_error("Portal session leaked or closed twice");
             }
         }
+        if (server.embedded_requests != 2)
+            throw std::runtime_error("Embedded cursor not requested at SelectSources");
+        server.cursor_modes = 1;
+        cloudplay::capture::PipeWireCapture capture;
+        cloudplay::capture::CaptureOptions options;
+        options.embedded_cursor = true;
+        bool unsupported{};
+        try {
+            capture.start(options);
+        } catch (const cloudplay::capture::FrameCaptureError &error) {
+            unsupported =
+                error.reason == cloudplay::capture::FrameCaptureFailure::UnsupportedFormat &&
+                error.operation == "portal.embedded_cursor_unavailable";
+        }
+        capture.stop();
+        if (!unsupported || server.closes != expected_closes)
+            throw std::runtime_error("Unsupported cursor mode not rejected cleanly");
     }
     g_test_dbus_down(test_bus);
     g_object_unref(test_bus);

@@ -137,10 +137,10 @@ int PortalSession::open(bool embedded_cursor) {
     }
     sender_ = g_dbus_connection_get_unique_name(bus_);
     if (embedded_cursor) {
-        auto *reply = g_dbus_connection_call_sync(bus_, service, desktop,
-            "org.freedesktop.DBus.Properties", "Get",
-            g_variant_new("(ss)", screen_cast, "AvailableCursorModes"),
-            G_VARIANT_TYPE("(v)"), G_DBUS_CALL_FLAGS_NONE, 5000, nullptr, nullptr);
+        auto *reply = g_dbus_connection_call_sync(
+            bus_, service, desktop, "org.freedesktop.DBus.Properties", "Get",
+            g_variant_new("(ss)", screen_cast, "AvailableCursorModes"), G_VARIANT_TYPE("(v)"),
+            G_DBUS_CALL_FLAGS_NONE, 5000, nullptr, nullptr);
         if (!reply)
             throw FrameCaptureError(FrameCaptureFailure::Portal, "portal.cursor_modes");
         GVariant *value{};
@@ -150,7 +150,8 @@ int PortalSession::open(bool embedded_cursor) {
         g_variant_unref(value);
         g_variant_unref(reply);
         if (!supported)
-            throw FrameCaptureError(FrameCaptureFailure::UnsupportedFormat, "portal.embedded_cursor_unavailable");
+            throw FrameCaptureError(FrameCaptureFailure::UnsupportedFormat,
+                                    "portal.embedded_cursor_unavailable");
     }
     sender_.erase(0, 1);
     std::replace(sender_.begin(), sender_.end(), '.', '_');
@@ -172,9 +173,10 @@ int PortalSession::open(bool embedded_cursor) {
            GVariant *, gpointer data) { static_cast<PortalSession *>(data)->closed_ = true; },
         this, nullptr);
     handle = token();
-    auto *selected =
-        request("SelectSources",
-                g_variant_new("(o@a{sv})", session_.c_str(), options(handle, false, true, embedded_cursor)), handle);
+    auto *selected = request(
+        "SelectSources",
+        g_variant_new("(o@a{sv})", session_.c_str(), options(handle, false, true, embedded_cursor)),
+        handle);
     g_variant_unref(selected);
     handle = token();
     auto *started = request(
