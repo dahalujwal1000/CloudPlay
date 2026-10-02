@@ -224,15 +224,17 @@ struct PipeWireCapture::Impl {
                 fail(FrameCaptureFailure::UnsupportedFormat, "pipewire.expected_dmabuf");
                 return;
             }
+            const auto chunk_offset = !plane.chunk ? 0U : plane.maxsize
+                ? plane.chunk->offset % plane.maxsize : plane.chunk->offset;
             if (plane.fd < 0 || plane.fd > INT_MAX || !plane.chunk || plane.chunk->stride <= 0 ||
                 plane.mapoffset > static_cast<std::uint32_t>(INT_MAX) ||
-                plane.chunk->offset > static_cast<std::uint32_t>(INT_MAX) - plane.mapoffset ||
+                chunk_offset > static_cast<std::uint32_t>(INT_MAX) - plane.mapoffset ||
                 (plane.chunk->flags & SPA_CHUNK_FLAG_CORRUPTED)) {
                 ++metrics.discarded;
                 fail(FrameCaptureFailure::UnsupportedFormat, "pipewire.invalid_plane_layout");
                 return;
             }
-            frame.planes[i] = {static_cast<int>(plane.fd), plane.mapoffset + plane.chunk->offset,
+            frame.planes[i] = {static_cast<int>(plane.fd), plane.mapoffset + chunk_offset,
                                plane.chunk->stride};
             pollfd fence{static_cast<int>(plane.fd), POLLIN, 0};
             const auto wait = ::poll(&fence, 1, 1000);

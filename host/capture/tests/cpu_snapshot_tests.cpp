@@ -1,5 +1,6 @@
 #include "../linux/cpu_snapshot.hpp"
 #include <array>
+#include <cstdlib>
 #include <drm_fourcc.h>
 #include <filesystem>
 #include <stdexcept>
@@ -58,15 +59,17 @@ int main() {
     if (!unsynchronized)
         throw std::runtime_error("Read started without verified fence");
 #ifdef CLOUDPLAY_HAVE_PNG
-    const auto path = std::filesystem::temp_directory_path() /
-                      ("cloudplay-png-test-" + std::to_string(getpid()) + ".png");
+    auto directory = (std::filesystem::temp_directory_path() / "cloudplay-png-XXXXXX").string();
+    if (!mkdtemp(directory.data()))
+        throw std::runtime_error("Cannot create private PNG test directory");
+    const auto path = std::filesystem::path(directory) / "snapshot.png";
     struct Remove {
         std::filesystem::path path;
         ~Remove() {
             std::error_code error;
-            std::filesystem::remove(path, error);
+            std::filesystem::remove_all(path, error);
         }
-    } remove{path};
+    } remove{directory};
     save_png(image, path.string());
     const auto loaded = load_png(path.string());
     if (loaded.width != 2 || loaded.height != 2 || loaded.rgb != expected)

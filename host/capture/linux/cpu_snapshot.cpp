@@ -1,5 +1,6 @@
 #include "cpu_snapshot.hpp"
 #include <algorithm>
+#include <bit>
 #include <cerrno>
 #include <chrono>
 #include <cstdio>
@@ -35,6 +36,8 @@ int sync_cpu(int fd, std::uint64_t flags) noexcept {
     return 0;
 }
 void validate(const CapturedFrame &frame) {
+    if constexpr (std::endian::native != std::endian::little)
+        error("snapshot.unsupported_byte_order");
     if (frame.storage != FrameStorage::DmaBuf || frame.plane_count != 1 ||
         frame.modifier != DRM_FORMAT_MOD_LINEAR)
         error("snapshot.requires_single_plane_linear_dmabuf");
@@ -201,6 +204,8 @@ void log_buffer_diagnostics(const FrameBufferDiagnostics &d) {
                   << ",\"isDmaBuf\":" << (d.memory_types[i] == SPA_DATA_DmaBuf ? "true" : "false")
                   << ",\"mapOffset\":" << d.map_offsets[i]
                   << ",\"chunkOffset\":" << d.chunk_offsets[i]
+                  << ",\"effectiveOffset\":" << static_cast<std::uint64_t>(d.map_offsets[i]) +
+                         (d.max_sizes[i] ? d.chunk_offsets[i] % d.max_sizes[i] : d.chunk_offsets[i])
                   << ",\"chunkSize\":" << d.chunk_sizes[i] << ",\"maxSize\":" << d.max_sizes[i]
                   << ",\"stride\":" << d.strides[i] << '}';
     }
