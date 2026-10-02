@@ -120,10 +120,11 @@ int PortalSession::open() {
     const ContextScope scope(context_);
     GError *error{};
     // GDBusConnectionFlags is a bitmask; the analyzer mistakes it for an exclusive enum.
-    // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
+    // NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange)
     const auto flags =
         static_cast<GDBusConnectionFlags>(G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT |
                                           G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION);
+    // NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange)
     bus_ = g_dbus_connection_new_for_address_sync(std::getenv("DBUS_SESSION_BUS_ADDRESS"), flags,
                                                   nullptr, nullptr, &error);
     if (!bus_) {

@@ -1,6 +1,7 @@
 #include <charconv>
 #include <chrono>
 #include <cloudplay/capture/pipewire_capture.hpp>
+#include <cloudplay/capture/capture_acceptance.hpp>
 #include <csignal>
 #include <iostream>
 #include <string_view>
@@ -74,10 +75,7 @@ int main(int argc, char **argv) {
         const auto stats = capture.metrics();
         const double fps = elapsed > 0 ? static_cast<double>(stats.delivered) / elapsed : 0;
         // Strict capture gate, not encoder/WebRTC acceptance. Static sources may be damage-driven.
-        const bool stable = !interrupted && seconds >= 30 && sample_count >= 29 &&
-                            minimum_fps >= 58.0 && fps >= 59.0 && stats.discarded == 0 &&
-                            stats.sequence_gaps == 0 && stats.delivered == stats.gpu_imports &&
-                            stats.cpu_frames == 0 && stats.presentation_age_samples > 0;
+        const bool stable = cloudplay::capture::stable_gpu_capture(stats, elapsed, minimum_fps, sample_count, interrupted != 0);
         std::cout << "{\"event\":\"capture.summary\",\"stable1080p60Gpu\":"
                   << (stable ? "true" : "false") << ",\"fps\":" << fps
                   << ",\"minimumIntervalFps\":" << (sample_count ? minimum_fps : 0)

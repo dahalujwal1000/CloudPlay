@@ -1,4 +1,5 @@
 #include <cloudplay/capture/frame_capture.hpp>
+#include <cloudplay/capture/capture_acceptance.hpp>
 #include <stdexcept>
 #include <type_traits>
 
@@ -29,4 +30,40 @@ int main() {
     }
     if (released != 2)
         throw std::runtime_error("Exception leaked a frame");
+    int order{};
+    auto release_order = [](void *owner, void *resource) noexcept {
+        *static_cast<int *>(resource) = ++*static_cast<int *>(owner);
+    };
+    int image_release{}, buffer_release{};
+    {
+        const FrameLease frame(&order, &buffer_release, release_order);
+        const FrameLease image(&order, &image_release, release_order);
+    }
+    if (image_release != 1 || buffer_release != 2)
+        throw std::runtime_error("GPU image not released before buffer reuse");
+
+    using namespace cloudplay::capture;
+    FrameCaptureMetrics good;
+    good.delivered = good.gpu_imports = good.received = 1800;
+    good.width = 1920;
+    good.height = 1080;
+    good.drm_format = 1;
+    good.presentation_age_samples = 1800;
+    if (!stable_gpu_capture(good, 30.0, 59.0, 29, false) ||
+        stable_gpu_capture(good, 5.0, 60.0, 4, false) ||
+        stable_gpu_capture(good, 30.0, 35.0, 29, false) ||
+        stable_gpu_capture(good, 30.0, 59.0, 29, true) ||
+        stable_gpu_capture(good, 60.0, 59.0, 29, false))
+        throw std::runtime_error("Bad sustained capture gate");
+    for (int condition = 0; condition < 6; ++condition) {
+        auto bad = good;
+        if (condition == 0) bad.gpu_imports = 0;
+        if (condition == 1) bad.cpu_frames = 1;
+        if (condition == 2) bad.discarded = 1;
+        if (condition == 3) bad.sequence_gaps = 1;
+        if (condition == 4) bad.width = 1280;
+        if (condition == 5) bad.presentation_age_samples = 0;
+        if (stable_gpu_capture(bad, 30.0, 59.0, 29, false))
+            throw std::runtime_error("Invalid stream passed capture gate");
+    }
 }
