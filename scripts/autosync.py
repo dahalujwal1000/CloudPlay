@@ -164,7 +164,8 @@ def sync_once(repo: Repo, remote: str, branch: str, message: str, retries: int =
     if repo.status().strip():
         files = repo.changed_files()
         stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        summary = f"{message} {stamp}"
+        noun = "file" if len(files) == 1 else "files"
+        summary = f"{message} ({len(files)} {noun}) {stamp}"
         log(f"detected {len(files)} changed path(s); committing")
         ok, detail = repo.commit_all(summary)
         if ok:

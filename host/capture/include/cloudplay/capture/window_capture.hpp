@@ -1,31 +1,38 @@
 #pragma once
 
 #include <cloudplay/capture/frame_policy.hpp>
-#include <windows.h>
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <windows.h>
 
 struct ID3D11Texture2D;
 
 namespace cloudplay::capture {
 
 enum class CaptureState { Idle, Starting, Capturing, Delivering, Stopping, Stopped, Failed };
-enum class CaptureFailure { InvalidTarget, Unsupported, TargetClosed, DeviceLost, Platform };
+enum class CaptureFailure {
+    InvalidTarget,
+    Unsupported,
+    TargetClosed,
+    DeviceLost,
+    Platform,
+    PermissionDenied
+};
 
 class CaptureError : public std::runtime_error {
   public:
-    CaptureError(CaptureFailure reason, HRESULT result)
-        : std::runtime_error("Windows capture failed"), reason(reason), result(result) {}
+    CaptureError(CaptureFailure failure, HRESULT code)
+        : std::runtime_error("Windows capture failed"), reason(failure), result(code) {}
     CaptureFailure reason;
     HRESULT result;
 };
 
 struct FrameView {
     // Borrowed GPU texture. Valid only until the synchronous consumer returns.
-    ID3D11Texture2D* texture;
+    ID3D11Texture2D *texture;
     FrameSize content_size;
     std::int64_t timestamp_100ns;
     double capture_latency_us;
@@ -48,11 +55,11 @@ class WindowCapture {
   public:
     WindowCapture();
     ~WindowCapture();
-    WindowCapture(const WindowCapture&) = delete;
-    WindowCapture& operator=(const WindowCapture&) = delete;
+    WindowCapture(const WindowCapture &) = delete;
+    WindowCapture &operator=(const WindowCapture &) = delete;
 
     void start(HWND window);
-    bool poll(const std::function<void(const FrameView&)>& consumer);
+    bool poll(const std::function<void(const FrameView &)> &consumer);
     void stop();
     [[nodiscard]] CaptureState state() const;
     [[nodiscard]] CaptureStats stats() const;
