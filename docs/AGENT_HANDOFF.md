@@ -34,8 +34,18 @@ Files are `/tmp/cloudplay-real-desktop.png` and `.last.png`; they are not commit
 Do not count this readback run as zero-copy performance acceptance. Run a separate
 30-second continuous-motion desktop probe without snapshots before attributing
 its sequence gaps or advancing performance acceptance. All 19 combined and five
-default CTests pass for the desktop-validation changes; hosted CI is not yet
-verified for these changes. NVENC integration and WebRTC remain unstarted.
+default CTests, clang-format 18 and GCC analysis pass for desktop-validation changes.
+All five [CI jobs](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37011712241)
+passed for source revision 1766c74c915911b9ccf65dd996d2b3ca7b608306.
+The user confirmed desktop motion, cursor and gradients looked correct (visual
+acceptance, not independent exact-pixel ground truth). A second, no-readback run
+delivered 974 GPU frames over 30.0001 seconds: 32.4666 FPS, minimum interval
+19.9997 FPS, zero local discards/sequence gaps and zero reported CPU/GPU copies.
+Mean producer interval was 30.8136 ms; mean EGL import 0.263963 ms. Low FPS
+persists without readback. Investigate producer/compositor/source cadence without
+duplicating frames or weakening the gate. Captured-buffer NVENC GPU interop is
+the next validation, with development prerequisites still missing; integration
+and WebRTC remain unstarted.
 
 Read `AGENTS.md`, `docs/TASKS.md`, the relevant architecture documents, and ADRs
 before continuing. Preserve the game-agnostic design and the existing subsystem
@@ -176,8 +186,9 @@ explicit HWND and duration; see the Windows checklist for the user's next action
 1. Complete Linux capture acceptance: the uninterrupted 60 Hz retest delivered
    1163 GPU-backed frames over 30 seconds, averaging 38.7663 FPS, with no reported
    drops/copies. EGL import averaged 0.272952 ms; the gate still fails.
-   Isolate source rendering/compositor pacing/cross-device handling. New producer
-   presentation-interval diagnostics need a live sample. Do not weaken the gate,
+   Isolate source rendering/compositor pacing/cross-device handling. Real-desktop
+   no-readback validation now reports 32.4666 FPS and mean producer intervals
+   of 30.8136 ms with no reported losses. Do not weaken the gate,
    duplicate frames or change display settings automatically.
    Windows capture and its historical CI results remain valid but live acceptance
    is unverified; Windows tests are no longer the primary development gate.

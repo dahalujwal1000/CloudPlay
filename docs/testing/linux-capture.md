@@ -113,7 +113,28 @@ cursors without the reported colored artifacts. Content and cursor positions
 changed between snapshots. There is no independent desktop pixel reference;
 gradient fidelity and temporal motion correctness remain unverified. These
 observations do not establish stable 1080p60 or captured-frame NVENC interoperability.
-NVENC integration and WebRTC have not started.
+The user subsequently confirmed that scrolling, window dragging, cursor movement
+and gradients looked correct. This is visual acceptance, not an independent
+pixel-exact desktop reference or an automated temporal test.
+
+The follow-up no-readback run lasted 30.0001 seconds: 974 received/delivered GPU
+frames, 32.4666 FPS, minimum interval 19.9997 FPS, zero local discards/sequence
+gaps, zero diagnostic or capture-module CPU copies and zero reported GPU copies.
+It used the same format/layout, with the ordinary probe's hidden cursor. Mean
+producer interval was 30.8136 ms (maximum 499.975 ms); mean EGL import was
+0.263963 ms (maximum 0.591831 ms). Of 974 PTS samples, 971 were future-dated;
+signed mean age was -7.07511 ms, not capture-origin latency. Maximum negotiated
+rate remained 60, with actual negotiated rate unspecified. Exit 3 correctly
+rejected sustained 1080p60. Low FPS persists without CPU readback; producer/
+compositor pacing versus source damage cadence remains unresolved.
+
+All 19 combined and five default CTests, clang-format 18 and GCC -fanalyzer pass.
+All five [CI jobs](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37011712241)
+passed for desktop-validation source revision 1766c74c915911b9ccf65dd996d2b3ca7b608306.
+Next is captured-buffer GPU/NVENC interoperability validation; an EGLImage is not
+an NVENC resource. Development headers and a supported registration/synchronization
+path must be established before production encoder implementation. NVENC
+integration and WebRTC have not started; WebRTC remains gated on stable 1080p60.
 
 ### Multi-Frame Buffer Diagnostics
 
