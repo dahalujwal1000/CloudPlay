@@ -20,12 +20,14 @@ enum class FrameCaptureFailure {
     GpuImport,
     Consumer
 };
-enum class FrameStorage { DmaBuf, D3D11 };
+enum class FrameStorage { DmaBuf, D3D11, CpuMemory };
 
 struct CaptureOptions {
     std::uint32_t width{1920};
     std::uint32_t height{1080};
     std::uint32_t fps{60};
+    bool capture_diagnostics{};
+    bool cpu_capture{}; // Linux diagnostic path only; never performance acceptance.
 };
 
 struct DmaBufPlane {
@@ -48,6 +50,7 @@ struct FrameBufferDiagnostics {
     bool explicit_sync_present{};
     bool implicit_fences_ready{};
     bool egl_image_imported{};
+    std::array<std::int64_t, 4> fds{-1, -1, -1, -1}; // Diagnostic values, not owned handles.
 };
 
 struct CapturedFrame {
@@ -61,11 +64,14 @@ struct CapturedFrame {
     std::int64_t timestamp_ns{};
     void *native_image{}; // Borrowed EGLImage on Linux; not an NVENC input handle.
     FrameBufferDiagnostics diagnostics;
+    const unsigned char *cpu_data{}; // Borrowed mapped plane, valid only in consume().
+    std::size_t cpu_size{};
 };
 
 struct FrameCaptureMetrics {
     FrameBufferDiagnostics buffer;
     std::uint64_t received{};
+    std::uint64_t released{};
     std::uint64_t delivered{};
     std::uint64_t discarded{};
     std::uint64_t sequence_gaps{};

@@ -38,8 +38,9 @@ int sync_cpu(int fd, std::uint64_t flags) noexcept {
 void validate(const CapturedFrame &frame) {
     if constexpr (std::endian::native != std::endian::little)
         error("snapshot.unsupported_byte_order");
-    if (frame.storage != FrameStorage::DmaBuf || frame.plane_count != 1 ||
-        frame.modifier != DRM_FORMAT_MOD_LINEAR)
+    if ((frame.storage != FrameStorage::DmaBuf && frame.storage != FrameStorage::CpuMemory) ||
+        frame.plane_count != 1 ||
+        (frame.storage == FrameStorage::DmaBuf && frame.modifier != DRM_FORMAT_MOD_LINEAR))
         error("snapshot.requires_single_plane_linear_dmabuf");
     if (frame.width == 0 || frame.height == 0 || frame.width > 8192 || frame.height > 8192 ||
         frame.planes[0].stride < static_cast<std::int64_t>(frame.width) * 4)
@@ -57,6 +58,11 @@ void validate(const CapturedFrame &frame) {
 
 CpuImage unpack_linear_frame(const CapturedFrame &frame, std::span<const unsigned char> memory) {
     validate(frame);
+    if (frame.storage == FrameStorage::CpuMemory) {
+        if (!frame.cpu_data || !frame.cpu_size)
+            error("snapshot.cpu_plane_unavailable");
+        return unpack_linear_frame(frame, {frame.cpu_data, frame.cpu_size});
+    }
     const auto &plane = frame.planes[0];
     const auto last = static_cast<std::uint64_t>(plane.offset) +
                       static_cast<std::uint64_t>(frame.height - 1) * plane.stride +

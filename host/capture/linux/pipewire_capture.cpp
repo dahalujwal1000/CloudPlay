@@ -8,6 +8,7 @@
 #include <drm_fourcc.h>
 #include <exception>
 #include <mutex>
+#include <iostream>
 #include <optional>
 #include <pipewire/pipewire.h>
 #include <poll.h>
@@ -91,6 +92,18 @@ struct PipeWireCapture::Impl {
         gpu.reset();
         portal.reset();
     }
+    void release_buffer(pw_buffer *buffer) noexcept {
+        const int result = pw_stream_queue_buffer(stream, buffer);
+        if (result < 0) {
+            metrics.native_error = result;
+            fail(FrameCaptureFailure::PipeWire, "pipewire.return_buffer");
+            return;
+        }
+        ++metrics.released;
+        if (options.capture_diagnostics)
+            std::cout << "{\"event\":\"capture.release\",\"released\":" << metrics.released
+                      << ",\"received\":" << metrics.received << "}\n";
+    }
     void update_format(const spa_pod *param) {
         if (!param)
             return;
@@ -112,7 +125,9 @@ struct PipeWireCapture::Impl {
                 ? static_cast<double>(format.max_framerate.num) / format.max_framerate.denom
                 : 0;
         if (!drm_format(format.format) || format.size.width != options.width ||
-            format.size.height != options.height || !(format.flags & SPA_VIDEO_FLAG_MODIFIER)) {
+            format.size.height != options.height ||
+            (!options.cpu_capture && !(format.flags & SPA_VIDEO_FLAG_MODIFIER)) ||
+            (options.cpu_capture && (format.flags & SPA_VIDEO_FLAG_MODIFIER))) {
             fail(FrameCaptureFailure::UnsupportedFormat);
             return;
         }
@@ -126,7 +141,8 @@ struct PipeWireCapture::Impl {
         params[0] = static_cast<spa_pod *>(spa_pod_builder_add_object(
             &builder, SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers, SPA_PARAM_BUFFERS_buffers,
             SPA_POD_CHOICE_RANGE_Int(4, 2, 8), SPA_PARAM_BUFFERS_dataType,
-            SPA_POD_CHOICE_FLAGS_Int(1 << SPA_DATA_DmaBuf)));
+            SPA_POD_CHOICE_FLAGS_Int(options.cpu_capture ? (1 << SPA_DATA_MemFd) | (1 << SPA_DATA_MemPtr)
+                                                        : (1 << SPA_DATA_DmaBuf))));
         params[1] = static_cast<spa_pod *>(
             spa_pod_builder_add_object(&builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
                                        SPA_PARAM_META_type, SPA_POD_Id(SPA_META_Header),
@@ -150,17 +166,19 @@ struct PipeWireCapture::Impl {
             if (!next)
                 break;
             ++metrics.received;
+            if (options.capture_diagnostics)
+                std::cout << "{\"event\":\"capture.acquire\",\"received\":" << metrics.received
+                          << ",\"released\":" << metrics.released << "}\n";
             if (latest) {
-                pw_stream_queue_buffer(stream, latest);
+                release_buffer(latest);
                 ++metrics.discarded;
             }
             latest = next;
         }
         if (!latest)
             return;
-        const FrameLease lease(stream, latest, [](void *owner, void *buffer) noexcept {
-            pw_stream_queue_buffer(static_cast<pw_stream *>(owner),
-                                   static_cast<pw_buffer *>(buffer));
+        const FrameLease lease(this, latest, [](void *owner, void *buffer) noexcept {
+            static_cast<Impl *>(owner)->release_buffer(static_cast<pw_buffer *>(buffer));
         });
         if (!consumer || failure || !metrics.drm_format) {
             ++metrics.discarded;
@@ -173,6 +191,7 @@ struct PipeWireCapture::Impl {
         for (std::uint32_t i = 0; i < std::min(buffer->n_datas, 4U); ++i) {
             const auto &data = buffer->datas[i];
             metrics.buffer.memory_types[i] = data.type;
+            metrics.buffer.fds[i] = data.fd;
             metrics.buffer.data_flags[i] = data.flags;
             metrics.buffer.map_offsets[i] = data.mapoffset;
             metrics.buffer.max_sizes[i] = data.maxsize;
@@ -216,9 +235,15 @@ struct PipeWireCapture::Impl {
         frame.drm_format = metrics.drm_format;
         frame.modifier = format.modifier;
         frame.plane_count = buffer->n_datas;
+        frame.storage = options.cpu_capture ? FrameStorage::CpuMemory : FrameStorage::DmaBuf;
+        if (options.cpu_capture && buffer->n_datas != 1) {
+            fail(FrameCaptureFailure::UnsupportedFormat, "pipewire.cpu_multiplane_not_supported");
+            return;
+        }
         for (std::uint32_t i = 0; i < buffer->n_datas; ++i) {
             const auto &plane = buffer->datas[i];
-            if (plane.type != SPA_DATA_DmaBuf) {
+            if ((!options.cpu_capture && plane.type != SPA_DATA_DmaBuf) ||
+                (options.cpu_capture && plane.type != SPA_DATA_MemFd && plane.type != SPA_DATA_MemPtr)) {
                 ++metrics.cpu_frames;
                 ++metrics.discarded;
                 fail(FrameCaptureFailure::UnsupportedFormat, "pipewire.expected_dmabuf");
@@ -227,7 +252,8 @@ struct PipeWireCapture::Impl {
             const auto chunk_offset = !plane.chunk    ? 0U
                                       : plane.maxsize ? plane.chunk->offset % plane.maxsize
                                                       : plane.chunk->offset;
-            if (plane.fd < 0 || plane.fd > INT_MAX || !plane.chunk || plane.chunk->stride <= 0 ||
+            if ((!options.cpu_capture && plane.fd < 0) || plane.fd > INT_MAX ||
+                !plane.chunk || plane.chunk->stride <= 0 ||
                 plane.mapoffset > static_cast<std::uint32_t>(INT_MAX) ||
                 chunk_offset > static_cast<std::uint32_t>(INT_MAX) - plane.mapoffset ||
                 (plane.chunk->flags & SPA_CHUNK_FLAG_CORRUPTED)) {
@@ -237,6 +263,16 @@ struct PipeWireCapture::Impl {
             }
             frame.planes[i] = {static_cast<int>(plane.fd), plane.mapoffset + chunk_offset,
                                plane.chunk->stride};
+            if (options.cpu_capture) {
+                if (!plane.data || !plane.maxsize) {
+                    fail(FrameCaptureFailure::UnsupportedFormat, "pipewire.cpu_mapping_unavailable");
+                    return;
+                }
+                frame.planes[i].offset = chunk_offset;
+                frame.cpu_data = static_cast<const unsigned char *>(plane.data);
+                frame.cpu_size = plane.maxsize;
+                continue;
+            }
             pollfd fence{static_cast<int>(plane.fd), POLLIN, 0};
             const auto wait = ::poll(&fence, 1, 1000);
             if (wait <= 0 || !(fence.revents & POLLIN) || (fence.revents & (POLLERR | POLLNVAL))) {
@@ -246,7 +282,7 @@ struct PipeWireCapture::Impl {
                 return;
             }
         }
-        metrics.buffer.implicit_fences_ready = true;
+        metrics.buffer.implicit_fences_ready = !options.cpu_capture;
         frame.diagnostics = metrics.buffer;
         const auto *header = static_cast<spa_meta_header *>(
             spa_buffer_find_meta_data(buffer, SPA_META_Header, sizeof(spa_meta_header)));
@@ -267,6 +303,19 @@ struct PipeWireCapture::Impl {
                                         (header->flags & SPA_META_HEADER_FLAG_DISCONT) != 0);
         } else
             presentation_timing = {};
+        if (options.cpu_capture) {
+            ++metrics.cpu_frames;
+            ++metrics.cpu_copies;
+            state = FrameCaptureState::Delivering;
+            try {
+                (*consumer)(frame);
+                ++metrics.delivered;
+                state = FrameCaptureState::Capturing;
+            } catch (...) {
+                fail(FrameCaptureFailure::Consumer);
+            }
+            return;
+        }
         const auto import_start = std::chrono::steady_clock::now();
         const auto image = gpu->import(frame);
         const auto import_ms = std::chrono::duration<double, std::milli>(
@@ -349,7 +398,8 @@ void PipeWireCapture::start(const CaptureOptions &options) {
             return events;
         }();
         pw_core_add_listener(self.core, &self.core_listener, &core_events, &self);
-        self.gpu = std::make_unique<GpuImporter>();
+        if (!options.cpu_capture)
+            self.gpu = std::make_unique<GpuImporter>();
         auto *properties = pw_properties_new(PW_KEY_MEDIA_TYPE, "Video", PW_KEY_MEDIA_CATEGORY,
                                              "Capture", PW_KEY_MEDIA_ROLE, "Screen", nullptr);
         if (!self.portal->serial().empty())
@@ -388,8 +438,9 @@ void PipeWireCapture::start(const CaptureOptions &options) {
         const spa_fraction rate{options.fps, 1};
         const spa_fraction minimum_rate{0, 1};
         for (const auto &entry : formats) {
-            const auto modifiers = self.gpu->modifiers(entry.drm);
-            if (modifiers.empty())
+            const auto modifiers = options.cpu_capture ? std::vector<std::uint64_t>{}
+                                                      : self.gpu->modifiers(entry.drm);
+            if (!options.cpu_capture && modifiers.empty())
                 continue;
             spa_pod_frame object;
             spa_pod_frame choice;
@@ -402,6 +453,7 @@ void PipeWireCapture::start(const CaptureOptions &options) {
                                 SPA_FORMAT_VIDEO_framerate,
                                 SPA_POD_CHOICE_RANGE_Fraction(&rate, &minimum_rate, &rate),
                                 SPA_FORMAT_VIDEO_maxFramerate, SPA_POD_Fraction(&rate), 0);
+            if (!options.cpu_capture) {
             spa_pod_builder_prop(&builder, SPA_FORMAT_VIDEO_modifier,
                                  SPA_POD_PROP_FLAG_MANDATORY | SPA_POD_PROP_FLAG_DONT_FIXATE);
             spa_pod_builder_push_choice(&builder, &choice, SPA_CHOICE_Enum, 0);
@@ -409,12 +461,15 @@ void PipeWireCapture::start(const CaptureOptions &options) {
             for (auto modifier : modifiers)
                 spa_pod_builder_long(&builder, static_cast<std::int64_t>(modifier));
             spa_pod_builder_pop(&builder, &choice);
+            }
             params.push_back(static_cast<spa_pod *>(spa_pod_builder_pop(&builder, &object)));
         }
         if (params.empty())
             throw FrameCaptureError(FrameCaptureFailure::GpuImport);
         const auto flags = static_cast<pw_stream_flags>(PW_STREAM_FLAG_AUTOCONNECT |
-                                                        PW_STREAM_FLAG_DONT_RECONNECT);
+                                                        PW_STREAM_FLAG_DONT_RECONNECT |
+                                                        PW_STREAM_FLAG_NO_CONVERT |
+                                                        (options.cpu_capture ? PW_STREAM_FLAG_MAP_BUFFERS : 0));
         if (pw_stream_connect(self.stream, PW_DIRECTION_INPUT,
                               self.portal->serial().empty() ? self.portal->node() : PW_ID_ANY,
                               flags, params.data(), static_cast<std::uint32_t>(params.size())) < 0)
