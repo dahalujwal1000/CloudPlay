@@ -67,8 +67,10 @@ struct FrameCaptureMetrics {
 
 class FrameCaptureError : public std::runtime_error {
   public:
-    explicit FrameCaptureError(FrameCaptureFailure failure, std::string_view stage = "capture", int code = 0)
-        : std::runtime_error("Frame capture failed"), reason(failure), operation(stage), native_code(code) {}
+    explicit FrameCaptureError(FrameCaptureFailure failure, std::string_view stage = "capture",
+                               int code = 0)
+        : std::runtime_error("Frame capture failed"), reason(failure), operation(stage),
+          native_code(code) {}
     FrameCaptureFailure reason;
     std::string operation;
     int native_code;

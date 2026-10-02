@@ -103,11 +103,12 @@ GVariant *PortalSession::request(const char *method, GVariant *parameters,
             nullptr, G_DBUS_CALL_FLAGS_NONE, 1000, nullptr, nullptr);
         if (closed)
             g_variant_unref(closed);
-        throw FrameCaptureError(valid_handle ? FrameCaptureFailure::Timeout
-                                             : FrameCaptureFailure::Portal, method);
+        throw FrameCaptureError(
+            valid_handle ? FrameCaptureFailure::Timeout : FrameCaptureFailure::Portal, method);
     }
     if (response.code != 0)
-        throw FrameCaptureError(FrameCaptureFailure::PermissionDenied, method, static_cast<int>(response.code));
+        throw FrameCaptureError(FrameCaptureFailure::PermissionDenied, method,
+                                static_cast<int>(response.code));
     return g_variant_ref(response.results);
 }
 

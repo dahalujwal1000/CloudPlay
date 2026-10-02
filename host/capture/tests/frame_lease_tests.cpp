@@ -2,16 +2,19 @@
 #include <stdexcept>
 #include <type_traits>
 
+namespace {
+void release(void *owner, void *resource) noexcept {
+    if (resource)
+        ++*static_cast<int *>(owner);
+}
+} // namespace
+
 int main() {
     using cloudplay::capture::FrameLease;
     static_assert(!std::is_copy_constructible_v<FrameLease>);
     static_assert(!std::is_move_constructible_v<FrameLease>);
     int released{};
     int buffer{};
-    auto release = [](void *owner, void *resource) noexcept {
-        if (resource)
-            ++*static_cast<int *>(owner);
-    };
     {
         const FrameLease lease(&released, &buffer, release);
         if (released != 0)
