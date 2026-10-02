@@ -38,6 +38,10 @@ this setup; it is not a publisher signature. The probe loads the driver library,
 compares its maximum NVENC API to the installed header, and verifies entry points.
 It never opens an encode session or captures content; success alone proves only
 API readiness. Exit codes: 0 ready/help, 1 driver/API failure, 2 invalid arguments.
+Observed live probe: SDK API 13.1, driver maximum API 13.1, interface ready.
+CTest also uses isolated fake libraries to check old-driver rejection, version
+query failure, interface creation failure, absent functions and missing exports.
+These test libraries live only under the build directory; never install them.
 Run without untrusted `LD_LIBRARY_PATH`/`LD_PRELOAD`; never point at SDK stub libraries.
 
 The full [NVIDIA SDK download](https://developer.nvidia.com/video-codec-sdk)

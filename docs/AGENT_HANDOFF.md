@@ -191,3 +191,6 @@ CBR, no B-frames/lookahead and one-frame VBV in about 0.34 seconds. HEVC encoded
 No private content was captured; encoded output was discarded. This is a short
 capability check, not sustained performance or capture/streaming acceptance.
 See `docs/testing/linux-nvenc.md` for reproducible commands and limitations.
+The live readiness probe reports SDK/driver API 13.1 and interface ready. Its
+CTest cases exercise CLI handling and isolated fake-driver failure paths, without
+requiring a GPU in CI. Default domain tests still build without NVIDIA headers.
