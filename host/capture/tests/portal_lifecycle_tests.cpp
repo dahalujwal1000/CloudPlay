@@ -28,9 +28,12 @@ class TestPortal final {
             loop_ = g_main_loop_new(context, false);
             // GDBusConnectionFlags is a bitmask, including these two combined flags.
             // NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange)
-            const auto flags = static_cast<GDBusConnectionFlags>(G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT | G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION);
+            const auto flags =
+                static_cast<GDBusConnectionFlags>(G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT |
+                                                  G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION);
             // NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange)
-            auto *bus = g_dbus_connection_new_for_address_sync(g_getenv("DBUS_SESSION_BUS_ADDRESS"), flags, nullptr, nullptr, nullptr);
+            auto *bus = g_dbus_connection_new_for_address_sync(g_getenv("DBUS_SESSION_BUS_ADDRESS"),
+                                                               flags, nullptr, nullptr, nullptr);
             auto *info = g_dbus_node_info_new_for_xml(xml, nullptr);
             const GDBusInterfaceVTable callbacks{method, nullptr, nullptr, {nullptr}};
             const auto screen_id = g_dbus_connection_register_object(
