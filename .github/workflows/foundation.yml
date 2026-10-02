@@ -16,7 +16,7 @@ jobs:
       - name: Linux Capture Dependencies
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update && sudo apt-get install -y libpipewire-0.3-dev libglib2.0-dev libegl1-mesa-dev libdrm-dev
+          sudo apt-get update && sudo apt-get install -y libpipewire-0.3-dev libglib2.0-dev libegl1-mesa-dev libdrm-dev libpng-dev
           echo "CLOUDPLAY_LINUX_CAPTURE=ON" >> "$GITHUB_ENV"
       - name: NVIDIA Interface Headers (Linux)
         if: runner.os == 'Linux'
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - run: sudo apt-get update && sudo apt-get install -y clang-format-18 clang-tidy-18 ninja-build libpipewire-0.3-dev libglib2.0-dev libegl1-mesa-dev libdrm-dev
+      - run: sudo apt-get update && sudo apt-get install -y clang-format-18 clang-tidy-18 ninja-build libpipewire-0.3-dev libglib2.0-dev libegl1-mesa-dev libdrm-dev libpng-dev
       - name: NVIDIA Interface Headers
         run: |
           curl -fL --max-time 60 https://developer.nvidia.com/downloads/designworks/video-codec-sdk/secure/13.1/video_codec_interface_13.1.15.zip -o /tmp/nvenc-interface.zip

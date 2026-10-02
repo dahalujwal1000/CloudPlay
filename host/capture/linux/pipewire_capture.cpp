@@ -51,6 +51,7 @@ struct PipeWireCapture::Impl {
     spa_hook core_listener{};
     spa_video_info_raw format{};
     std::optional<FrameCaptureFailure> failure;
+    const char *failure_stage{"pipewire.capture"};
     const Consumer *consumer{};
     std::exception_ptr consumer_error;
     std::optional<std::uint64_t> last_sequence;
@@ -61,9 +62,11 @@ struct PipeWireCapture::Impl {
         if (owner != std::this_thread::get_id())
             throw std::logic_error("Capture called from non-owner thread");
     }
-    void fail(FrameCaptureFailure reason) noexcept {
-        if (!failure)
+    void fail(FrameCaptureFailure reason, const char *stage = "pipewire.capture") noexcept {
+        if (!failure) {
             failure = reason;
+            failure_stage = stage;
+        }
         state = FrameCaptureState::Failed;
     }
     void cleanup() noexcept {
@@ -198,7 +201,7 @@ struct PipeWireCapture::Impl {
             spa_buffer_find_meta_data(buffer, SPA_META_SyncTimeline,
                                       sizeof(spa_meta_sync_timeline)) != nullptr;
         if (metrics.buffer.explicit_sync_present) {
-            fail(FrameCaptureFailure::UnsupportedFormat);
+            fail(FrameCaptureFailure::UnsupportedFormat, "pipewire.explicit_sync_not_supported");
             return;
         }
 #endif
@@ -218,7 +221,7 @@ struct PipeWireCapture::Impl {
             if (plane.type != SPA_DATA_DmaBuf) {
                 ++metrics.cpu_frames;
                 ++metrics.discarded;
-                fail(FrameCaptureFailure::UnsupportedFormat);
+                fail(FrameCaptureFailure::UnsupportedFormat, "pipewire.expected_dmabuf");
                 return;
             }
             if (plane.fd < 0 || plane.fd > INT_MAX || !plane.chunk || plane.chunk->stride <= 0 ||
@@ -226,6 +229,7 @@ struct PipeWireCapture::Impl {
                 plane.chunk->offset > static_cast<std::uint32_t>(INT_MAX) - plane.mapoffset ||
                 (plane.chunk->flags & SPA_CHUNK_FLAG_CORRUPTED)) {
                 ++metrics.discarded;
+                fail(FrameCaptureFailure::UnsupportedFormat, "pipewire.invalid_plane_layout");
                 return;
             }
             frame.planes[i] = {static_cast<int>(plane.fd), plane.mapoffset + plane.chunk->offset,
@@ -234,7 +238,8 @@ struct PipeWireCapture::Impl {
             const auto wait = ::poll(&fence, 1, 1000);
             if (wait <= 0 || !(fence.revents & POLLIN) || (fence.revents & (POLLERR | POLLNVAL))) {
                 metrics.native_error = wait < 0 ? errno : 0;
-                fail(wait == 0 ? FrameCaptureFailure::Timeout : FrameCaptureFailure::GpuImport);
+                fail(wait == 0 ? FrameCaptureFailure::Timeout : FrameCaptureFailure::GpuImport,
+                     "pipewire.implicit_fence_wait");
                 return;
             }
         }
@@ -267,7 +272,7 @@ struct PipeWireCapture::Impl {
         if (image == EGL_NO_IMAGE_KHR) {
             metrics.native_error = eglGetError();
             ++metrics.discarded;
-            fail(FrameCaptureFailure::GpuImport);
+            fail(FrameCaptureFailure::GpuImport, "egl.import_dmabuf");
             return;
         }
         const FrameLease image_lease(gpu.get(), image, [](void *owner, void *image) noexcept {
@@ -307,6 +312,7 @@ void PipeWireCapture::start(const CaptureOptions &options) {
     self.options = options;
     self.metrics = {};
     self.failure.reset();
+    self.failure_stage = "pipewire.capture";
     self.last_sequence.reset();
     self.presentation_timing = {};
     self.consumer_error = {};
@@ -439,7 +445,7 @@ bool PipeWireCapture::poll(const Consumer &consume) {
     if (self.failure) {
         const auto failure = *self.failure;
         self.cleanup();
-        throw FrameCaptureError(failure, "pipewire.capture", self.metrics.native_error);
+        throw FrameCaptureError(failure, self.failure_stage, self.metrics.native_error);
     }
     return self.metrics.delivered > before;
 }
