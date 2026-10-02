@@ -1,0 +1,357 @@
+#include "gpu_import.hpp"
+#include "portal_session.hpp"
+#include <cloudplay/capture/pipewire_capture.hpp>
+#include <pipewire/pipewire.h>
+#include <spa/param/video/format-utils.h>
+#include <spa/pod/builder.h>
+#include <spa/buffer/meta.h>
+#include <drm_fourcc.h>
+#include <algorithm>
+#include <chrono>
+#include <climits>
+#include <exception>
+#include <mutex>
+#include <optional>
+#include <thread>
+#include <time.h>
+#include <unistd.h>
+
+namespace cloudplay::capture {
+namespace {
+struct PixelFormat { spa_video_format spa; std::uint32_t drm; };
+constexpr PixelFormat formats[]{{SPA_VIDEO_FORMAT_BGRx, DRM_FORMAT_XRGB8888},
+    {SPA_VIDEO_FORMAT_BGRA, DRM_FORMAT_ARGB8888}, {SPA_VIDEO_FORMAT_RGBx, DRM_FORMAT_XBGR8888},
+    {SPA_VIDEO_FORMAT_RGBA, DRM_FORMAT_ABGR8888}};
+std::uint32_t drm_format(spa_video_format format) {
+    for (const auto &entry : formats)
+        if (entry.spa == format)
+            return entry.drm;
+    return 0;
+}
+} // namespace
+
+struct PipeWireCapture::Impl {
+    const std::thread::id owner{std::this_thread::get_id()};
+    FrameCaptureState state{FrameCaptureState::Idle};
+    FrameCaptureMetrics metrics;
+    CaptureOptions options;
+    std::unique_ptr<PortalSession> portal;
+    std::unique_ptr<GpuImporter> gpu;
+    pw_main_loop *loop{};
+    pw_context *context{};
+    pw_core *core{};
+    pw_stream *stream{};
+    spa_hook listener{};
+    spa_hook core_listener{};
+    spa_video_info_raw format{};
+    std::optional<FrameCaptureFailure> failure;
+    const Consumer *consumer{};
+    std::exception_ptr consumer_error;
+    std::optional<std::uint64_t> last_sequence;
+    std::chrono::steady_clock::time_point deadline;
+
+    void check() const {
+        if (owner != std::this_thread::get_id())
+            throw std::logic_error("Capture called from non-owner thread");
+    }
+    void fail(FrameCaptureFailure reason) noexcept {
+        if (!failure)
+            failure = reason;
+        state = FrameCaptureState::Failed;
+    }
+    void cleanup() noexcept {
+        if (stream) {
+            spa_hook_remove(&listener);
+            pw_stream_destroy(stream);
+            stream = nullptr;
+        }
+        if (core) {
+            spa_hook_remove(&core_listener);
+            pw_core_disconnect(core);
+            core = nullptr;
+        }
+        if (context) {
+            pw_context_destroy(context);
+            context = nullptr;
+        }
+        if (loop) {
+            pw_main_loop_destroy(loop);
+            loop = nullptr;
+        }
+        gpu.reset();
+        portal.reset();
+    }
+    void update_format(const spa_pod *param) {
+        if (!param)
+            return;
+        if (spa_format_video_raw_parse(param, &format) < 0 || !drm_format(format.format) ||
+            format.size.width != options.width || format.size.height != options.height ||
+            !(format.flags & SPA_VIDEO_FLAG_MODIFIER)) {
+            fail(FrameCaptureFailure::UnsupportedFormat);
+            return;
+        }
+        metrics.width = format.size.width;
+        metrics.height = format.size.height;
+        metrics.drm_format = drm_format(format.format);
+        metrics.modifier = format.modifier;
+        std::uint8_t storage[1024];
+        auto builder = SPA_POD_BUILDER_INIT(storage, sizeof(storage));
+        const spa_pod *params[2];
+        params[0] = static_cast<spa_pod *>(spa_pod_builder_add_object(&builder,
+            SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
+            SPA_PARAM_BUFFERS_buffers, SPA_POD_CHOICE_RANGE_Int(4, 2, 8),
+            SPA_PARAM_BUFFERS_dataType, SPA_POD_CHOICE_FLAGS_Int(1 << SPA_DATA_DmaBuf)));
+        params[1] = static_cast<spa_pod *>(spa_pod_builder_add_object(&builder,
+            SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta, SPA_PARAM_META_type,
+            SPA_POD_Id(SPA_META_Header), SPA_PARAM_META_size, SPA_POD_Int(sizeof(spa_meta_header))));
+        if (pw_stream_update_params(stream, params, 2) < 0)
+            fail(FrameCaptureFailure::PipeWire);
+    }
+    void process() {
+        // Bounded draining: keep only the newest of at most eight available buffers.
+        pw_buffer *latest{};
+        for (unsigned i = 0; i < 8; ++i) {
+            auto *next = pw_stream_dequeue_buffer(stream);
+            if (!next)
+                break;
+            ++metrics.received;
+            if (latest) {
+                pw_stream_queue_buffer(stream, latest);
+                ++metrics.discarded;
+            }
+            latest = next;
+        }
+        if (!latest)
+            return;
+        const FrameLease lease(stream, latest, [](void *owner, void *buffer) noexcept {
+            pw_stream_queue_buffer(static_cast<pw_stream *>(owner), static_cast<pw_buffer *>(buffer));
+        });
+        if (!consumer || failure || !metrics.drm_format) {
+            ++metrics.discarded;
+            return;
+        }
+        auto *buffer = latest->buffer;
+        if (buffer->n_datas < 1 || buffer->n_datas > 4) {
+            ++metrics.discarded;
+            fail(FrameCaptureFailure::UnsupportedFormat);
+            return;
+        }
+        CapturedFrame frame;
+        frame.width = format.size.width;
+        frame.height = format.size.height;
+        frame.drm_format = metrics.drm_format;
+        frame.modifier = format.modifier;
+        frame.plane_count = buffer->n_datas;
+        for (std::uint32_t i = 0; i < buffer->n_datas; ++i) {
+            const auto &plane = buffer->datas[i];
+            if (plane.type != SPA_DATA_DmaBuf) {
+                ++metrics.cpu_frames;
+                ++metrics.discarded;
+                fail(FrameCaptureFailure::UnsupportedFormat);
+                return;
+            }
+            if (plane.fd < 0 || plane.fd > INT_MAX || !plane.chunk || plane.chunk->stride <= 0 ||
+                plane.mapoffset > static_cast<std::uint32_t>(INT_MAX) ||
+                plane.chunk->offset > static_cast<std::uint32_t>(INT_MAX) - plane.mapoffset ||
+                (plane.chunk->flags & SPA_CHUNK_FLAG_CORRUPTED)) {
+                ++metrics.discarded;
+                return;
+            }
+            frame.planes[i] = {static_cast<int>(plane.fd), plane.mapoffset + plane.chunk->offset, plane.chunk->stride};
+        }
+        const auto *header = static_cast<spa_meta_header *>(spa_buffer_find_meta_data(buffer, SPA_META_Header, sizeof(spa_meta_header)));
+        if (header) {
+            if (header->flags & SPA_META_HEADER_FLAG_CORRUPTED) {
+                ++metrics.discarded;
+                return;
+            }
+            if (last_sequence && !(header->flags & SPA_META_HEADER_FLAG_DISCONT) && header->seq > *last_sequence)
+                metrics.sequence_gaps += header->seq - *last_sequence - 1;
+            last_sequence = header->seq;
+            frame.timestamp_ns = header->pts;
+            timespec now{};
+            clock_gettime(CLOCK_MONOTONIC, &now);
+            const auto current = static_cast<std::int64_t>(now.tv_sec) * 1000000000LL + now.tv_nsec;
+            if (header->pts > 0 && current >= header->pts && current - header->pts < 10000000000LL) {
+                const double latency = static_cast<double>(current - header->pts) / 1000000.0;
+                ++metrics.latency_samples;
+                metrics.latency_sum_ms += latency;
+                metrics.max_latency_ms = std::max(metrics.max_latency_ms, latency);
+            }
+        }
+        const auto image = gpu->import(frame);
+        if (image == EGL_NO_IMAGE_KHR) {
+            ++metrics.discarded;
+            fail(FrameCaptureFailure::GpuImport);
+            return;
+        }
+        const FrameLease image_lease(gpu.get(), image, [](void *owner, void *image) noexcept {
+            static_cast<GpuImporter *>(owner)->release(static_cast<EGLImageKHR>(image));
+        });
+        ++metrics.gpu_imports;
+        frame.native_image = image;
+        state = FrameCaptureState::Delivering;
+        try {
+            (*consumer)(frame);
+            ++metrics.delivered;
+            state = FrameCaptureState::Capturing;
+        } catch (...) {
+            ++metrics.discarded;
+            consumer_error = std::current_exception();
+            fail(FrameCaptureFailure::Consumer);
+        }
+    }
+};
+
+PipeWireCapture::PipeWireCapture() : impl_(std::make_unique<Impl>()) {}
+PipeWireCapture::~PipeWireCapture() {
+    if (impl_->owner != std::this_thread::get_id() || impl_->state == FrameCaptureState::Delivering)
+        std::terminate();
+    impl_->cleanup();
+}
+
+void PipeWireCapture::start(const CaptureOptions &options) {
+    auto &self = *impl_;
+    self.check();
+    if (self.state != FrameCaptureState::Idle && self.state != FrameCaptureState::Stopped)
+        throw std::logic_error("Capture must be stopped before starting");
+    if (options.width != 1920 || options.height != 1080 || options.fps != 60)
+        throw std::invalid_argument("Initial capture target is 1920x1080 at 60 FPS");
+    self.options = options;
+    self.metrics = {};
+    self.failure.reset();
+    self.last_sequence.reset();
+    self.consumer_error = {};
+    self.state = FrameCaptureState::Starting;
+    try {
+        static std::once_flag initialized;
+        std::call_once(initialized, [] { pw_init(nullptr, nullptr); });
+        self.portal = std::make_unique<PortalSession>();
+        int fd = self.portal->open();
+        // Consume the fd only after the PipeWire context exists.
+        self.loop = pw_main_loop_new(nullptr);
+        if (self.loop)
+            self.context = pw_context_new(pw_main_loop_get_loop(self.loop), nullptr, 0);
+        if (!self.context) {
+            ::close(fd);
+            throw FrameCaptureError(FrameCaptureFailure::PipeWire);
+        }
+        self.core = pw_context_connect_fd(self.context, fd, nullptr, 0);
+        if (!self.core)
+            throw FrameCaptureError(FrameCaptureFailure::PipeWire);
+        static const pw_core_events core_events = [] {
+            pw_core_events events{};
+            events.version = PW_VERSION_CORE_EVENTS;
+            events.error = [](void *data, std::uint32_t, int, int, const char *) {
+                static_cast<Impl *>(data)->fail(FrameCaptureFailure::PipeWire);
+            };
+            return events;
+        }();
+        pw_core_add_listener(self.core, &self.core_listener, &core_events, &self);
+        self.gpu = std::make_unique<GpuImporter>();
+        auto *properties = pw_properties_new(PW_KEY_MEDIA_TYPE, "Video", PW_KEY_MEDIA_CATEGORY, "Capture",
+            PW_KEY_MEDIA_ROLE, "Screen", nullptr);
+        if (!self.portal->serial().empty())
+            pw_properties_set(properties, PW_KEY_TARGET_OBJECT, self.portal->serial().c_str());
+        self.stream = pw_stream_new(self.core, "CloudPlay capture diagnostic", properties);
+        if (!self.stream)
+            throw FrameCaptureError(FrameCaptureFailure::PipeWire);
+        static const pw_stream_events events = [] {
+            pw_stream_events value{};
+            value.version = PW_VERSION_STREAM_EVENTS;
+            value.state_changed = [](void *data, pw_stream_state, pw_stream_state state, const char *) {
+                auto &capture = *static_cast<Impl *>(data);
+                if (state == PW_STREAM_STATE_ERROR || state == PW_STREAM_STATE_UNCONNECTED)
+                    capture.fail(FrameCaptureFailure::PipeWire);
+            };
+            value.param_changed = [](void *data, std::uint32_t id, const spa_pod *param) {
+                if (id == SPA_PARAM_Format)
+                    static_cast<Impl *>(data)->update_format(param);
+            };
+            value.process = [](void *data) {
+                auto &capture = *static_cast<Impl *>(data);
+                try { capture.process(); }
+                catch (...) { capture.fail(FrameCaptureFailure::GpuImport); }
+            };
+            return value;
+        }();
+        pw_stream_add_listener(self.stream, &self.listener, &events, &self);
+        std::uint8_t storage[16384];
+        auto builder = SPA_POD_BUILDER_INIT(storage, sizeof(storage));
+        std::vector<const spa_pod *> params;
+        for (const auto &entry : formats) {
+            const auto modifiers = self.gpu->modifiers(entry.drm);
+            if (modifiers.empty())
+                continue;
+            spa_pod_frame object;
+            spa_pod_frame choice;
+            spa_pod_builder_push_object(&builder, &object, SPA_TYPE_OBJECT_Format, SPA_PARAM_EnumFormat);
+            spa_pod_builder_add(&builder,
+                SPA_FORMAT_mediaType, SPA_POD_Id(SPA_MEDIA_TYPE_video),
+                SPA_FORMAT_mediaSubtype, SPA_POD_Id(SPA_MEDIA_SUBTYPE_raw),
+                SPA_FORMAT_VIDEO_format, SPA_POD_Id(entry.spa),
+                SPA_FORMAT_VIDEO_size, SPA_POD_Rectangle(&SPA_RECTANGLE(options.width, options.height)),
+                SPA_FORMAT_VIDEO_framerate, SPA_POD_Fraction(&SPA_FRACTION(options.fps, 1)), 0);
+            spa_pod_builder_prop(&builder, SPA_FORMAT_VIDEO_modifier,
+                SPA_POD_PROP_FLAG_MANDATORY | SPA_POD_PROP_FLAG_DONT_FIXATE);
+            spa_pod_builder_push_choice(&builder, &choice, SPA_CHOICE_Enum, 0);
+            spa_pod_builder_long(&builder, static_cast<std::int64_t>(modifiers.front()));
+            for (auto modifier : modifiers)
+                spa_pod_builder_long(&builder, static_cast<std::int64_t>(modifier));
+            spa_pod_builder_pop(&builder, &choice);
+            params.push_back(static_cast<spa_pod *>(spa_pod_builder_pop(&builder, &object)));
+        }
+        if (params.empty())
+            throw FrameCaptureError(FrameCaptureFailure::GpuImport);
+        const auto flags = static_cast<pw_stream_flags>(PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_DONT_RECONNECT);
+        if (pw_stream_connect(self.stream, PW_DIRECTION_INPUT,
+                self.portal->serial().empty() ? self.portal->node() : PW_ID_ANY,
+                flags, params.data(), static_cast<std::uint32_t>(params.size())) < 0)
+            throw FrameCaptureError(FrameCaptureFailure::PipeWire);
+        self.deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
+    } catch (const FrameCaptureError &error) {
+        self.fail(error.reason);
+        self.cleanup();
+        throw;
+    } catch (...) {
+        self.fail(FrameCaptureFailure::PipeWire);
+        self.cleanup();
+        throw;
+    }
+}
+
+bool PipeWireCapture::poll(const Consumer &consume) {
+    auto &self = *impl_;
+    self.check();
+    if (self.state != FrameCaptureState::Starting && self.state != FrameCaptureState::Capturing)
+        throw std::logic_error("Capture is not running");
+    const auto before = self.metrics.delivered;
+    self.consumer = &consume;
+    self.portal->pump();
+    if (self.portal->closed())
+        self.fail(FrameCaptureFailure::PermissionDenied);
+    if (!self.failure && pw_loop_iterate(pw_main_loop_get_loop(self.loop), 0) < 0)
+        self.fail(FrameCaptureFailure::PipeWire);
+    self.consumer = nullptr;
+    if (!self.failure && self.metrics.delivered == 0 && std::chrono::steady_clock::now() > self.deadline)
+        self.fail(FrameCaptureFailure::Timeout);
+    if (self.failure) {
+        const auto failure = *self.failure;
+        self.cleanup();
+        throw FrameCaptureError(failure);
+    }
+    return self.metrics.delivered > before;
+}
+
+void PipeWireCapture::stop() {
+    auto &self = *impl_;
+    self.check();
+    if (self.state == FrameCaptureState::Delivering)
+        throw std::logic_error("Cannot stop capture from consumer");
+    self.state = FrameCaptureState::Stopping;
+    self.cleanup();
+    self.state = FrameCaptureState::Stopped;
+}
+FrameCaptureState PipeWireCapture::state() const { impl_->check(); return impl_->state; }
+FrameCaptureMetrics PipeWireCapture::metrics() const { impl_->check(); return impl_->metrics; }
+} // namespace cloudplay::capture
