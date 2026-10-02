@@ -12,7 +12,7 @@ class PortalSession final {
     ~PortalSession();
     PortalSession(const PortalSession &) = delete;
     PortalSession &operator=(const PortalSession &) = delete;
-    int open();
+    int open(bool embedded_cursor = false);
     void pump();
     void close() noexcept;
     [[nodiscard]] std::uint32_t node() const noexcept { return node_; }

@@ -23,9 +23,11 @@ int main(int argc, char **argv) {
             return cloudplay::capture::run_capture_diagnostics(argc, argv);
     unsigned seconds{30};
     std::string snapshot_path, reference_path;
+    bool desktop_validation{};
     if (argc == 2 && std::string_view(argv[1]) == "--help") {
         std::cout << "Usage: cloudplay_linux_capture_probe [--seconds 1..120] "
                      "[--snapshot new.png [--reference expected.png]]\n"
+                     "  --desktop-validation new.png [--seconds 30..120]\n"
                      "  --capture-diagnostics [--cpu-capture] [--frames 1..120] "
                      "[--seconds 1..120] [--snapshot new.png] [--reference expected.png]\n"
                      "  --capture-diagnostics --generate-reference new.png\n";
@@ -38,6 +40,10 @@ int main(int argc, char **argv) {
         const std::string_view value(argv[i + 1]);
         if (option == "--snapshot" && snapshot_path.empty())
             snapshot_path = value;
+        else if (option == "--desktop-validation" && snapshot_path.empty()) {
+            snapshot_path = value;
+            desktop_validation = true;
+        }
         else if (option == "--reference" && reference_path.empty())
             reference_path = value;
         else if (option == "--seconds") {
@@ -50,6 +56,8 @@ int main(int argc, char **argv) {
             return 2;
     }
     if (!reference_path.empty() && snapshot_path.empty())
+        return 2;
+    if (desktop_validation && (seconds < 30 || !reference_path.empty()))
         return 2;
 #ifndef CLOUDPLAY_HAVE_PNG
     if (!snapshot_path.empty()) {
@@ -68,14 +76,21 @@ int main(int argc, char **argv) {
         bool layout_logged{}, snapshot_done{};
         std::exception_ptr snapshot_error;
         cloudplay::capture::CpuImage snapshot;
+        cloudplay::capture::CpuImage final_snapshot;
+        bool capture_final{};
+        unsigned diagnostic_copies{};
         std::cerr << "Select a 1920x1080 monitor or window in GNOME's sharing dialog.\n";
-        capture.start({});
+        cloudplay::capture::CaptureOptions options;
+        options.embedded_cursor = desktop_validation;
+        capture.start(options);
         auto started = std::chrono::steady_clock::now();
         auto sample_start = started;
         auto sample_frames = std::uint64_t{};
         double minimum_fps = 1000000.0;
         unsigned sample_count{};
         bool first = true;
+        std::cout << "{\"event\":\"capture.validation_mode\",\"embeddedCursorRequested\":"
+                  << (desktop_validation ? "true" : "false") << "}\n";
         while (!interrupted) {
             const bool delivered = capture.poll([&](const auto &frame) {
                 if (!frame.native_image || frame.plane_count == 0 || frame.width != 1920 ||
@@ -89,10 +104,19 @@ int main(int argc, char **argv) {
                     cloudplay::capture::log_buffer_diagnostics(frame.diagnostics);
                     layout_logged = true;
                 }
-                if (!snapshot_path.empty() && !snapshot_done && !snapshot_error) {
+                const bool snapshot_due = !desktop_validation ||
+                    (!first && std::chrono::steady_clock::now() - started >= std::chrono::seconds(5));
+                if (!snapshot_path.empty() && !snapshot_error &&
+                    ((!snapshot_done && snapshot_due) || capture_final)) {
                     try {
-                        snapshot = cloudplay::capture::read_cpu_snapshot(frame);
-                        snapshot_done = true;
+                        if (capture_final) {
+                            final_snapshot = cloudplay::capture::read_cpu_snapshot(frame);
+                            capture_final = false;
+                        } else {
+                            snapshot = cloudplay::capture::read_cpu_snapshot(frame);
+                            snapshot_done = true;
+                        }
+                        ++diagnostic_copies;
                     } catch (...) {
                         snapshot_error = std::current_exception();
                     }
@@ -107,7 +131,7 @@ int main(int argc, char **argv) {
                 first = false;
             }
             const auto stats = capture.metrics();
-            if (snapshot_done)
+            if (snapshot_done && !desktop_validation)
                 break;
             const double interval = std::chrono::duration<double>(now - sample_start).count();
             if (!first && interval >= 1.0) {
@@ -120,15 +144,29 @@ int main(int argc, char **argv) {
                 sample_frames = stats.delivered;
                 sample_start = now;
             }
-            if (!first && now - started >= std::chrono::seconds(seconds))
-                break;
+            if (!first && now - started >= std::chrono::seconds(seconds)) {
+                if (!desktop_validation || !final_snapshot.rgb.empty())
+                    break;
+                capture_final = true;
+            }
+            if (!first && now - started >= std::chrono::seconds(seconds + 10))
+                throw cloudplay::capture::FrameCaptureError(cloudplay::capture::FrameCaptureFailure::Timeout,
+                                                           "diagnostic.final_frame_timeout");
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
         const double elapsed =
             std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count();
         capture.stop();
         const auto stats = capture.metrics();
-        if (snapshot_done) {
+        if (snapshot_done && desktop_validation) {
+            cloudplay::capture::save_png(snapshot, snapshot_path);
+            if (!final_snapshot.rgb.empty())
+                cloudplay::capture::save_png(final_snapshot, snapshot_path + ".last.png");
+            std::cout << "{\"event\":\"capture.desktop_snapshots\",\"cpuCopies\":" << diagnostic_copies
+                      << ",\"finalSaved\":" << (!final_snapshot.rgb.empty() ? "true" : "false")
+                      << ",\"pixelCorrectVerified\":false,\"motionCorrectVerified\":false}\n";
+        }
+        if (snapshot_done && !desktop_validation) {
             cloudplay::capture::save_png(snapshot, snapshot_path);
             std::uint64_t mismatched_pixels{};
             unsigned max_difference{};
@@ -161,10 +199,11 @@ int main(int argc, char **argv) {
         }
         const double fps = elapsed > 0 ? static_cast<double>(stats.delivered) / elapsed : 0;
         // Strict capture gate, not encoder/WebRTC acceptance. Static sources may be damage-driven.
-        const bool stable = cloudplay::capture::stable_gpu_capture(stats, elapsed, minimum_fps,
+        const bool stable = !desktop_validation && cloudplay::capture::stable_gpu_capture(stats, elapsed, minimum_fps,
                                                                    sample_count, interrupted != 0);
         std::cout << "{\"event\":\"capture.summary\",\"stable1080p60Gpu\":"
                   << (stable ? "true" : "false") << ",\"fps\":" << fps
+                  << ",\"elapsedSeconds\":" << elapsed << ",\"diagnosticCpuCopies\":" << diagnostic_copies
                   << ",\"minimumIntervalFps\":" << (sample_count ? minimum_fps : 0)
                   << ",\"received\":" << stats.received << ",\"delivered\":" << stats.delivered
                   << ",\"discarded\":" << stats.discarded

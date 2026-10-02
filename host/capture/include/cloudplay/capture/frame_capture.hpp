@@ -28,6 +28,7 @@ struct CaptureOptions {
     std::uint32_t fps{60};
     bool capture_diagnostics{};
     bool cpu_capture{}; // Linux diagnostic path only; never performance acceptance.
+    bool embedded_cursor{};
 };
 
 struct DmaBufPlane {

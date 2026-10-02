@@ -32,7 +32,8 @@ class ContextScope final {
     GMainContext *context_;
 };
 
-GVariant *options(const std::string &token, bool create = false, bool select = false) {
+GVariant *options(const std::string &token, bool create = false, bool select = false,
+                  bool embedded_cursor = false) {
     GVariantBuilder builder;
     g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
     g_variant_builder_add(&builder, "{sv}", "handle_token", g_variant_new_string(token.c_str()));
@@ -42,7 +43,9 @@ GVariant *options(const std::string &token, bool create = false, bool select = f
     if (select) {
         g_variant_builder_add(&builder, "{sv}", "types", g_variant_new_uint32(3));
         g_variant_builder_add(&builder, "{sv}", "multiple", g_variant_new_boolean(false));
-        // Hidden cursor is the protocol default; no persistent permission/token requested.
+        if (embedded_cursor)
+            g_variant_builder_add(&builder, "{sv}", "cursor_mode", g_variant_new_uint32(2));
+        // No persistent permission or restore token requested.
     }
     return g_variant_builder_end(&builder);
 }
@@ -113,7 +116,7 @@ GVariant *PortalSession::request(const char *method, GVariant *parameters,
     return g_variant_ref(response.results);
 }
 
-int PortalSession::open() {
+int PortalSession::open(bool embedded_cursor) {
     const auto *type = std::getenv("XDG_SESSION_TYPE");
     if (!type || std::string_view(type) != "wayland" || !std::getenv("DBUS_SESSION_BUS_ADDRESS"))
         throw FrameCaptureError(FrameCaptureFailure::SessionUnavailable);
@@ -133,6 +136,22 @@ int PortalSession::open() {
         throw FrameCaptureError(FrameCaptureFailure::SessionUnavailable);
     }
     sender_ = g_dbus_connection_get_unique_name(bus_);
+    if (embedded_cursor) {
+        auto *reply = g_dbus_connection_call_sync(bus_, service, desktop,
+            "org.freedesktop.DBus.Properties", "Get",
+            g_variant_new("(ss)", screen_cast, "AvailableCursorModes"),
+            G_VARIANT_TYPE("(v)"), G_DBUS_CALL_FLAGS_NONE, 5000, nullptr, nullptr);
+        if (!reply)
+            throw FrameCaptureError(FrameCaptureFailure::Portal, "portal.cursor_modes");
+        GVariant *value{};
+        g_variant_get(reply, "(v)", &value);
+        const bool supported = g_variant_is_of_type(value, G_VARIANT_TYPE_UINT32) &&
+                               (g_variant_get_uint32(value) & 2U) != 0;
+        g_variant_unref(value);
+        g_variant_unref(reply);
+        if (!supported)
+            throw FrameCaptureError(FrameCaptureFailure::UnsupportedFormat, "portal.embedded_cursor_unavailable");
+    }
     sender_.erase(0, 1);
     std::replace(sender_.begin(), sender_.end(), '.', '_');
     auto handle = token();
@@ -155,7 +174,7 @@ int PortalSession::open() {
     handle = token();
     auto *selected =
         request("SelectSources",
-                g_variant_new("(o@a{sv})", session_.c_str(), options(handle, false, true)), handle);
+                g_variant_new("(o@a{sv})", session_.c_str(), options(handle, false, true, embedded_cursor)), handle);
     g_variant_unref(selected);
     handle = token();
     auto *started = request(

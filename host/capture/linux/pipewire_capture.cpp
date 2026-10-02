@@ -387,7 +387,7 @@ void PipeWireCapture::start(const CaptureOptions &options) {
         static std::once_flag initialized;
         std::call_once(initialized, [] { pw_init(nullptr, nullptr); });
         self.portal = std::make_unique<PortalSession>();
-        int fd = self.portal->open();
+        int fd = self.portal->open(options.embedded_cursor);
         // Consume the fd only after the PipeWire context exists.
         self.loop = pw_main_loop_new(nullptr);
         if (self.loop)
