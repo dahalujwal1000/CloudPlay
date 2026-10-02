@@ -88,7 +88,15 @@ struct PipeWireCapture::Impl {
     void update_format(const spa_pod *param) {
         if (!param)
             return;
-        if (spa_format_video_raw_parse(param, &format) < 0 || !drm_format(format.format) ||
+        if (spa_format_video_raw_parse(param, &format) < 0) {
+            fail(FrameCaptureFailure::UnsupportedFormat);
+            return;
+        }
+        metrics.width = format.size.width;
+        metrics.height = format.size.height;
+        metrics.drm_format = drm_format(format.format);
+        metrics.modifier = format.modifier;
+        if (!drm_format(format.format) ||
             format.size.width != options.width || format.size.height != options.height ||
             !(format.flags & SPA_VIDEO_FLAG_MODIFIER)) {
             fail(FrameCaptureFailure::UnsupportedFormat);
@@ -181,16 +189,24 @@ struct PipeWireCapture::Impl {
             timespec now{};
             clock_gettime(CLOCK_MONOTONIC, &now);
             const auto current = static_cast<std::int64_t>(now.tv_sec) * 1000000000LL + now.tv_nsec;
-            if (header->pts > 0 && current >= header->pts &&
-                current - header->pts < 10000000000LL) {
+            if (header->pts > 0 && header->pts > current - 10000000000LL &&
+                header->pts < current + 10000000000LL) {
                 const double latency = static_cast<double>(current - header->pts) / 1000000.0;
-                ++metrics.latency_samples;
-                metrics.latency_sum_ms += latency;
-                metrics.max_latency_ms = std::max(metrics.max_latency_ms, latency);
+                ++metrics.presentation_age_samples;
+                metrics.presentation_age_sum_ms += latency;
+                metrics.minimum_presentation_age_ms = std::min(metrics.minimum_presentation_age_ms, latency);
+                if (latency < 0)
+                    ++metrics.future_timestamps;
+                else {
+                    ++metrics.latency_samples;
+                    metrics.latency_sum_ms += latency;
+                    metrics.max_latency_ms = std::max(metrics.max_latency_ms, latency);
+                }
             }
         }
         const auto image = gpu->import(frame);
         if (image == EGL_NO_IMAGE_KHR) {
+            metrics.native_error = eglGetError();
             ++metrics.discarded;
             fail(FrameCaptureFailure::GpuImport);
             return;
@@ -252,8 +268,10 @@ void PipeWireCapture::start(const CaptureOptions &options) {
         static const pw_core_events core_events = [] {
             pw_core_events events{};
             events.version = PW_VERSION_CORE_EVENTS;
-            events.error = [](void *data, std::uint32_t, int, int, const char *) {
-                static_cast<Impl *>(data)->fail(FrameCaptureFailure::PipeWire);
+            events.error = [](void *data, std::uint32_t, int, int result, const char *) {
+                auto &capture = *static_cast<Impl *>(data);
+                capture.metrics.native_error = result;
+                capture.fail(FrameCaptureFailure::PipeWire);
             };
             return events;
         }();
@@ -359,7 +377,7 @@ bool PipeWireCapture::poll(const Consumer &consume) {
     if (self.failure) {
         const auto failure = *self.failure;
         self.cleanup();
-        throw FrameCaptureError(failure);
+        throw FrameCaptureError(failure, "pipewire.capture", self.metrics.native_error);
     }
     return self.metrics.delivered > before;
 }

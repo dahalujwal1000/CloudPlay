@@ -56,6 +56,11 @@ struct FrameCaptureMetrics {
     std::uint64_t latency_samples{};
     double latency_sum_ms{};
     double max_latency_ms{};
+    std::uint64_t presentation_age_samples{};
+    std::uint64_t future_timestamps{};
+    double presentation_age_sum_ms{};
+    double minimum_presentation_age_ms{};
+    int native_error{};
     std::uint32_t width{};
     std::uint32_t height{};
     std::uint32_t drm_format{};
