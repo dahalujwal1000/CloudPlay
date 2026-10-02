@@ -76,12 +76,13 @@ Additional successful local checks:
   the local GCC 16 standard headers; CI checks it with Ubuntu's compatible toolchain.
 - Signaling: `npm run check` (TypeScript, ESLint, Prettier, Node tests), plus direct
   execution of `dist/test/server.test.js` reporting seven passing tests.
-- Android: JUnit core tests (four passed), and debug APK assembly.
+- Android: clean debug APK assembly, JUnit core tests (four passed), app/UI lint
+  (warnings as errors except pinned dependency/toolchain update notices), and Kotlin
+  formatting applied. APK: `android/app/build/outputs/apk/debug/app-debug.apk`.
 - Gradle wrapper JAR checksum matches the official Gradle 8.13 checksum; distribution
   checksum is pinned in `gradle-wrapper.properties`.
 
-Android lint/format verification after the final resource changes is pending at the
-time of this update; consult the acceptance file for the latest completed result.
+The clean Android build/test/lint run passed after the final resource/module changes.
 Windows/MSVC and GitHub workflows have not run from this workspace. A local Git
 repository was initialized; this agent did not commit or push. Concurrently added
 `scripts/` autosync tooling and `.vscode/` settings are outside this foundation work
@@ -110,8 +111,8 @@ No emulator/device UI run has been verified.
 
 ## Next Work
 
-1. Complete final Android lint/format verification and run Windows/MSVC build/tests
-   using `docs/BUILDING.md`. Execute the defined GitHub workflow on the user's repo.
+1. Run Windows/MSVC build/tests using `docs/BUILDING.md`. Execute the defined GitHub
+   workflow on the user's repo; its remote results have not been inspected here.
 2. Start TASK-002 after foundation verification: Windows Graphics Capture to D3D11
    textures. Verify official Windows APIs and define callback/resource ownership.
 3. Continue TASK-003 NVENC, then TASK-004 PC-to-PC WebRTC. Keep media GPU-resident.
@@ -127,9 +128,9 @@ implemented foundation contracts and their remaining limitations.
 
 ## User Hardware and Open Details
 
-- PC: Intel Core i5-13420H, NVIDIA RTX 3050, 16 GB RAM.
+- PC: Windows 11, Intel Core i5-13420H, NVIDIA RTX 3050, 16 GB RAM.
 - Android: Android 16.
-- Still unconfirmed: Windows version, exact GPU VRAM/driver, Android model, and
+- Still unconfirmed: exact GPU VRAM/driver, Android model, and
   whether the user can execute builds on the Windows PC.
 - Local tools: CMake, Ninja, GCC 16, Node 22.23.1, npm. Isolated Java 17, Gradle 8.13,
   Android SDK platform 36/build-tools 35.0.0, and native format/analyzer tools were

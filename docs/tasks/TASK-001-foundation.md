@@ -23,7 +23,7 @@ Capture, NVENC, WebRTC media, device pairing, live game integration, or input en
 - [x] Linux native tests, format check, GCC static analysis pass locally.
 - [x] Android module scaffold, verified wrapper/checksum, Kotlin unit tests.
 - [x] Android debug APK builds locally.
-- [ ] Android lint and formatting pass after final changes.
+- [x] Android app/UI lint and formatting pass after final changes.
 - [x] Authenticated Fastify/WebSocket diagnostics, validation, config, safe logging.
 - [x] Signaling tests, TypeScript checking, ESLint, Prettier pass locally.
 - [x] CI workflow and documentation created; local Git repository initialized.

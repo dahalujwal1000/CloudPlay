@@ -14,6 +14,8 @@ Behaviour
 * Changes are debounced: a commit+push only happens once the working tree has
   been quiet for ``--debounce`` seconds, so half-written files are never
   captured.
+* A ``--max-wait`` ceiling forces a commit+push even while edits keep arriving,
+  so a continuously-edited tree can never starve the sync.
 * Sync is skipped while a merge / rebase / cherry-pick / revert / bisect is in
   progress.
 * Sync can be paused at runtime by creating the sentinel file
@@ -199,6 +201,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--path", default=".", help="path inside the git repository")
     parser.add_argument("--interval", type=float, default=5.0, help="poll interval (seconds)")
     parser.add_argument("--debounce", type=float, default=15.0, help="quiet period before committing (seconds)")
+    parser.add_argument("--max-wait", type=float, default=30.0,
+                        help="force a sync if edits keep arriving for this long (seconds)")
     parser.add_argument("--remote", default="origin", help="git remote name")
     parser.add_argument("--branch", default="", help="branch to push (default: current branch)")
     parser.add_argument("--message", default=DEFAULT_MESSAGE, help="base commit message")
@@ -236,6 +240,7 @@ def main(argv=None) -> int:
     log("watching for changes (Ctrl-C to stop)")
     last_fp = None
     dirty_since = None
+    first_dirty = None
 
     while not stopping["flag"]:
         try:
@@ -247,15 +252,23 @@ def main(argv=None) -> int:
                 if repo.status().strip():
                     if dirty_since is None:
                         log("change detected; waiting for the tree to settle")
+                        first_dirty = now
                     dirty_since = now
                 else:
                     dirty_since = None
+                    first_dirty = None
 
-            if dirty_since is not None and (now - dirty_since) >= args.debounce:
-                sync_once(repo, args.remote, args.branch, args.message)
-                dirty_since = None
-                last_fp = repo.fingerprint()
-            elif dirty_since is None and repo.has_commits() and (repo.unpushed_count() or 0) > 0:
+            if dirty_since is not None:
+                quiet = (now - dirty_since) >= args.debounce
+                forced = first_dirty is not None and (now - first_dirty) >= args.max_wait
+                if quiet or forced:
+                    if forced and not quiet:
+                        log("max-wait reached; committing while edits are ongoing")
+                    sync_once(repo, args.remote, args.branch, args.message)
+                    dirty_since = None
+                    first_dirty = None
+                    last_fp = repo.fingerprint()
+            elif repo.has_commits() and (repo.unpushed_count() or 0) > 0:
                 # Hand-made commit(s) with a clean tree: push them promptly.
                 sync_once(repo, args.remote, args.branch, args.message)
                 last_fp = repo.fingerprint()
