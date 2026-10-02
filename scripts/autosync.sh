@@ -24,6 +24,16 @@ PID_FILE="$GIT_DIR/autosync.pid"
 LOG_FILE="$GIT_DIR/autosync.log"
 PAUSE_FILE="$GIT_DIR/autosync.pause"
 PYTHON="${PYTHON:-python3}"
+SYSTEMD_UNIT="${CLOUDPLAY_AUTOSYNC_UNIT:-cloudplay-autosync.service}"
+SYSTEMD_UNIT_FILE="$HOME/.config/systemd/user/$SYSTEMD_UNIT"
+
+have_systemd() {
+    command -v systemctl >/dev/null 2>&1 && [[ -f "$SYSTEMD_UNIT_FILE" ]]
+}
+
+systemd_active() {
+    systemctl --user is-active --quiet "$SYSTEMD_UNIT" 2>/dev/null
+}
 
 pid_alive() {
     [[ -f "$PID_FILE" ]] || return 1
@@ -34,6 +44,11 @@ pid_alive() {
 }
 
 cmd_start() {
+    if have_systemd && systemd_active; then
+        echo "autosync is already running under systemd ($SYSTEMD_UNIT)." >&2
+        echo "Refusing to start a second daemon. Use 'systemctl --user restart $SYSTEMD_UNIT' instead." >&2
+        return 1
+    fi
     if pid_alive; then
         echo "autosync already running (pid $(cat "$PID_FILE"))"
         return 0
