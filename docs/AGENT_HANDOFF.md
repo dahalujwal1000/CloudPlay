@@ -7,7 +7,10 @@ Last verified: 2026-10-02.
 TASK-001 foundation is verified across native host, Android, signaling, and CI,
 including hosted Windows/MSVC build/tests. TASK-002 now has a Windows Graphics
 Capture module and diagnostic; live GPU acceptance remains
-in progress. Encoding, streaming, and pairing have not been implemented.
+unverified. The user changed the primary host to Fedora Linux (ADR-006).
+Linux SDK interface setup and NVENC readiness diagnostics are now available;
+live synthetic H.264/HEVC hardware checks pass. Production encoding, Linux
+capture, streaming, and pairing have not been implemented.
 
 Read `AGENTS.md`, `docs/TASKS.md`, the relevant architecture documents, and ADRs
 before continuing. Preserve the game-agnostic design and the existing subsystem
@@ -32,6 +35,8 @@ boundaries. Coordinate ownership using `docs/AI_AGENT_WORKFLOW.md`.
 | `docs/BUILDING.md`, `docs/tasks/TASK-001-foundation.md` | Build commands and acceptance criteria |
 | `host/capture/` | Portable frame policy, Windows WGC/D3D11 implementation, diagnostic, validation tests |
 | `docs/architecture/capture.md`, `docs/testing/capture.md` | Capture ownership and hardware acceptance checklist |
+| `host/diagnostics/` | Optional Linux NVENC driver API readiness probe, no encode session |
+| `docs/decisions/ADR-006-linux-host.md`, `docs/testing/linux-nvenc.md` | Linux-first decision, SDK setup and observed hardware checks |
 
 The build exposes `CloudPlay::Core`, `CloudPlay::Telemetry`, and on Windows
 `CloudPlay::Capture`. Other host modules
@@ -139,9 +144,13 @@ explicit HWND and duration; see the Windows checklist for the user's next action
 
 ## Next Work
 
-1. Run the capture probe/checklist on the user's Windows 11 PC. Record hardware
-   results and close TASK-002 only when its acceptance criteria pass.
-2. Continue TASK-003 NVENC, then TASK-004 PC-to-PC WebRTC. Keep media GPU-resident.
+1. Follow ADR-006: Linux/Fedora is now primary. Select consent-based Linux capture
+   and verify GPU-buffer interoperability/lifetimes before encoder implementation.
+   Windows capture and its historical CI results remain valid but live acceptance
+   is unverified; Windows tests are no longer the primary development gate.
+2. Complete Linux SDK/toolkit prerequisites, then TASK-003 production NVENC and
+   TASK-004 PC-to-PC WebRTC. Keep media GPU-resident. Do not treat the readiness
+   probe or FFmpeg test as an implemented CloudPlay encoder.
 3. Add actual cleanup and metrics as resources are introduced. State reducers alone
    do not release input, capture, encoder, transport, or game resources.
 4. Define payload schemas and per-session authorization before implementing the
@@ -154,15 +163,31 @@ implemented foundation contracts and their remaining limitations.
 
 ## User Hardware and Open Details
 
-- PC: Windows 11, Intel Core i5-13420H, NVIDIA RTX 3050, 16 GB RAM.
-- The user confirmed C++ Build Tools are installed and they can run the diagnostic.
+- Current host: Fedora Linux 44 Workstation, verified from `/etc/os-release`.
+- GPU: NVIDIA GeForce RTX 3050 6GB Laptop GPU, driver/KMD 615.71.09,
+  6144 MiB VRAM and CUDA UMD compatibility 13.4 verified with unsandboxed nvidia-smi.
+- Previously reported CPU/RAM: Intel Core i5-13420H, 16 GB RAM. Prior Windows 11
+  Build Tools confirmation does not establish any Linux toolkit prerequisites.
 - Android: Android 16.
-- Still unconfirmed: exact GPU VRAM/driver and Android model.
+- Still unconfirmed: Android model, full SDK archive path and CUDA Toolkit choice.
 - Local tools: CMake, Ninja, GCC 16, Node 22.23.1, npm. Isolated Java 17, Gradle 8.13,
   Android SDK platform 36/build-tools 35.0.0, and native format/analyzer tools were
   downloaded under `/tmp` for verification. The default system Java is 25; use 17.
 - Temporary verification paths: `/tmp/cloudplay-jdk17`, `/tmp/cloudplay-android-sdk`,
   `/tmp/cloudplay-gradle`, `/tmp/cloudplay-tools`. They are not repository dependencies.
 
-Request missing device/build details when needed for platform testing. No Windows
-SDK, NVIDIA SDK, or WebRTC SDK has been installed or integrated in this workspace.
+NVIDIA's official interface 13.1.15 archive is extracted under ignored
+`.cache/nvidia/Video_Codec_Interface_13.1.15/Interface`. This is headers only, not
+the full SDK. No CUDA Toolkit/nvcc, Windows SDK or WebRTC SDK is installed here.
+Full NVIDIA SDK download requires the user's login/license acceptance; a request
+for the downloaded ZIP path is pending. Do not request account credentials.
+
+Linux NVIDIA runtime libraries are present. Sandboxed nvidia-smi cannot access
+GPU device nodes; unsandboxed queries and FFmpeg checks succeeded. Do not
+reinstall the working driver based on the sandbox failure.
+H.264 NVENC encoded 120 synthetic 1080p60 frames at a 12 Mbps target, P1/ULL,
+CBR, no B-frames/lookahead and one-frame VBV in about 0.34 seconds. HEVC encoded
+60 frames successfully. AV1 encode was explicitly rejected as unsupported.
+No private content was captured; encoded output was discarded. This is a short
+capability check, not sustained performance or capture/streaming acceptance.
+See `docs/testing/linux-nvenc.md` for reproducible commands and limitations.
