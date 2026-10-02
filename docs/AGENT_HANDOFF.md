@@ -78,7 +78,7 @@ Additional successful local checks:
   execution of `dist/test/server.test.js` reporting seven passing tests.
 - Android: clean debug APK assembly, JUnit core tests (four passed), app/UI lint
   (warnings as errors except pinned dependency/toolchain update notices), and Kotlin
-  formatting applied. APK: `android/app/build/outputs/apk/debug/app-debug.apk`.
+  Spotless formatting check passed. APK: `android/app/build/outputs/apk/debug/app-debug.apk`.
 - Gradle wrapper JAR checksum matches the official Gradle 8.13 checksum; distribution
   checksum is pinned in `gradle-wrapper.properties`.
 

@@ -37,6 +37,13 @@ Tuning (passed straight through to `autosync.py`):
 ./scripts/autosync.sh start --message "chore: autosave"
 ```
 
+Aggressive "push almost immediately" profile (detect every second, settle 2s,
+and never let a busy tree starve the sync for more than 10s):
+
+```bash
+./scripts/autosync.sh start --interval 1 --debounce 2 --max-wait 10
+```
+
 Pausing while you do something delicate (a rebase, a large refactor, etc.):
 
 ```bash
