@@ -10,8 +10,11 @@ int main() {
         throw std::runtime_error("Invalid initial state");
     bool wrong_thread_rejected{};
     std::thread other([&] {
-        try { interface.stop(); }
-        catch (const std::logic_error &) { wrong_thread_rejected = true; }
+        try {
+            interface.stop();
+        } catch (const std::logic_error &) {
+            wrong_thread_rejected = true;
+        }
     });
     other.join();
     if (!wrong_thread_rejected)
@@ -26,7 +29,8 @@ int main() {
             interface.start({});
             throw std::runtime_error("Unavailable session accepted");
         } catch (const FrameCaptureError &error) {
-            if (error.reason != FrameCaptureFailure::SessionUnavailable || interface.state() != FrameCaptureState::Failed)
+            if (error.reason != FrameCaptureFailure::SessionUnavailable ||
+                interface.state() != FrameCaptureState::Failed)
                 throw std::runtime_error("Wrong startup failure");
         }
         interface.stop();

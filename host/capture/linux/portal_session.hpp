@@ -1,7 +1,7 @@
 #pragma once
 
-#include <gio/gio.h>
 #include <cstdint>
+#include <gio/gio.h>
 #include <string>
 
 namespace cloudplay::capture {

@@ -8,7 +8,16 @@
 namespace cloudplay::capture {
 
 enum class FrameCaptureState { Idle, Starting, Capturing, Delivering, Stopping, Stopped, Failed };
-enum class FrameCaptureFailure { SessionUnavailable, PermissionDenied, Timeout, Portal, PipeWire, UnsupportedFormat, GpuImport, Consumer };
+enum class FrameCaptureFailure {
+    SessionUnavailable,
+    PermissionDenied,
+    Timeout,
+    Portal,
+    PipeWire,
+    UnsupportedFormat,
+    GpuImport,
+    Consumer
+};
 enum class FrameStorage { DmaBuf, D3D11 };
 
 struct CaptureOptions {

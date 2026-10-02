@@ -1,27 +1,31 @@
 #include "gpu_import.hpp"
 #include "portal_session.hpp"
-#include <cloudplay/capture/pipewire_capture.hpp>
-#include <pipewire/pipewire.h>
-#include <spa/param/video/format-utils.h>
-#include <spa/pod/builder.h>
-#include <spa/buffer/meta.h>
-#include <drm_fourcc.h>
 #include <algorithm>
 #include <chrono>
 #include <climits>
+#include <cloudplay/capture/pipewire_capture.hpp>
+#include <drm_fourcc.h>
 #include <exception>
 #include <mutex>
 #include <optional>
+#include <pipewire/pipewire.h>
+#include <spa/buffer/meta.h>
+#include <spa/param/video/format-utils.h>
+#include <spa/pod/builder.h>
 #include <thread>
 #include <time.h>
 #include <unistd.h>
 
 namespace cloudplay::capture {
 namespace {
-struct PixelFormat { spa_video_format spa; std::uint32_t drm; };
+struct PixelFormat {
+    spa_video_format spa;
+    std::uint32_t drm;
+};
 constexpr PixelFormat formats[]{{SPA_VIDEO_FORMAT_BGRx, DRM_FORMAT_XRGB8888},
-    {SPA_VIDEO_FORMAT_BGRA, DRM_FORMAT_ARGB8888}, {SPA_VIDEO_FORMAT_RGBx, DRM_FORMAT_XBGR8888},
-    {SPA_VIDEO_FORMAT_RGBA, DRM_FORMAT_ABGR8888}};
+                                {SPA_VIDEO_FORMAT_BGRA, DRM_FORMAT_ARGB8888},
+                                {SPA_VIDEO_FORMAT_RGBx, DRM_FORMAT_XBGR8888},
+                                {SPA_VIDEO_FORMAT_RGBA, DRM_FORMAT_ABGR8888}};
 std::uint32_t drm_format(spa_video_format format) {
     for (const auto &entry : formats)
         if (entry.spa == format)
@@ -97,13 +101,14 @@ struct PipeWireCapture::Impl {
         std::uint8_t storage[1024];
         auto builder = SPA_POD_BUILDER_INIT(storage, sizeof(storage));
         const spa_pod *params[2];
-        params[0] = static_cast<spa_pod *>(spa_pod_builder_add_object(&builder,
-            SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
-            SPA_PARAM_BUFFERS_buffers, SPA_POD_CHOICE_RANGE_Int(4, 2, 8),
-            SPA_PARAM_BUFFERS_dataType, SPA_POD_CHOICE_FLAGS_Int(1 << SPA_DATA_DmaBuf)));
-        params[1] = static_cast<spa_pod *>(spa_pod_builder_add_object(&builder,
-            SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta, SPA_PARAM_META_type,
-            SPA_POD_Id(SPA_META_Header), SPA_PARAM_META_size, SPA_POD_Int(sizeof(spa_meta_header))));
+        params[0] = static_cast<spa_pod *>(spa_pod_builder_add_object(
+            &builder, SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers, SPA_PARAM_BUFFERS_buffers,
+            SPA_POD_CHOICE_RANGE_Int(4, 2, 8), SPA_PARAM_BUFFERS_dataType,
+            SPA_POD_CHOICE_FLAGS_Int(1 << SPA_DATA_DmaBuf)));
+        params[1] = static_cast<spa_pod *>(
+            spa_pod_builder_add_object(&builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
+                                       SPA_PARAM_META_type, SPA_POD_Id(SPA_META_Header),
+                                       SPA_PARAM_META_size, SPA_POD_Int(sizeof(spa_meta_header))));
         if (pw_stream_update_params(stream, params, 2) < 0)
             fail(FrameCaptureFailure::PipeWire);
     }
@@ -124,7 +129,8 @@ struct PipeWireCapture::Impl {
         if (!latest)
             return;
         const FrameLease lease(stream, latest, [](void *owner, void *buffer) noexcept {
-            pw_stream_queue_buffer(static_cast<pw_stream *>(owner), static_cast<pw_buffer *>(buffer));
+            pw_stream_queue_buffer(static_cast<pw_stream *>(owner),
+                                   static_cast<pw_buffer *>(buffer));
         });
         if (!consumer || failure || !metrics.drm_format) {
             ++metrics.discarded;
@@ -157,22 +163,26 @@ struct PipeWireCapture::Impl {
                 ++metrics.discarded;
                 return;
             }
-            frame.planes[i] = {static_cast<int>(plane.fd), plane.mapoffset + plane.chunk->offset, plane.chunk->stride};
+            frame.planes[i] = {static_cast<int>(plane.fd), plane.mapoffset + plane.chunk->offset,
+                               plane.chunk->stride};
         }
-        const auto *header = static_cast<spa_meta_header *>(spa_buffer_find_meta_data(buffer, SPA_META_Header, sizeof(spa_meta_header)));
+        const auto *header = static_cast<spa_meta_header *>(
+            spa_buffer_find_meta_data(buffer, SPA_META_Header, sizeof(spa_meta_header)));
         if (header) {
             if (header->flags & SPA_META_HEADER_FLAG_CORRUPTED) {
                 ++metrics.discarded;
                 return;
             }
-            if (last_sequence && !(header->flags & SPA_META_HEADER_FLAG_DISCONT) && header->seq > *last_sequence)
+            if (last_sequence && !(header->flags & SPA_META_HEADER_FLAG_DISCONT) &&
+                header->seq > *last_sequence)
                 metrics.sequence_gaps += header->seq - *last_sequence - 1;
             last_sequence = header->seq;
             frame.timestamp_ns = header->pts;
             timespec now{};
             clock_gettime(CLOCK_MONOTONIC, &now);
             const auto current = static_cast<std::int64_t>(now.tv_sec) * 1000000000LL + now.tv_nsec;
-            if (header->pts > 0 && current >= header->pts && current - header->pts < 10000000000LL) {
+            if (header->pts > 0 && current >= header->pts &&
+                current - header->pts < 10000000000LL) {
                 const double latency = static_cast<double>(current - header->pts) / 1000000.0;
                 ++metrics.latency_samples;
                 metrics.latency_sum_ms += latency;
@@ -249,8 +259,8 @@ void PipeWireCapture::start(const CaptureOptions &options) {
         }();
         pw_core_add_listener(self.core, &self.core_listener, &core_events, &self);
         self.gpu = std::make_unique<GpuImporter>();
-        auto *properties = pw_properties_new(PW_KEY_MEDIA_TYPE, "Video", PW_KEY_MEDIA_CATEGORY, "Capture",
-            PW_KEY_MEDIA_ROLE, "Screen", nullptr);
+        auto *properties = pw_properties_new(PW_KEY_MEDIA_TYPE, "Video", PW_KEY_MEDIA_CATEGORY,
+                                             "Capture", PW_KEY_MEDIA_ROLE, "Screen", nullptr);
         if (!self.portal->serial().empty())
             pw_properties_set(properties, PW_KEY_TARGET_OBJECT, self.portal->serial().c_str());
         self.stream = pw_stream_new(self.core, "CloudPlay capture diagnostic", properties);
@@ -259,7 +269,8 @@ void PipeWireCapture::start(const CaptureOptions &options) {
         static const pw_stream_events events = [] {
             pw_stream_events value{};
             value.version = PW_VERSION_STREAM_EVENTS;
-            value.state_changed = [](void *data, pw_stream_state, pw_stream_state state, const char *) {
+            value.state_changed = [](void *data, pw_stream_state, pw_stream_state state,
+                                     const char *) {
                 auto &capture = *static_cast<Impl *>(data);
                 if (state == PW_STREAM_STATE_ERROR || state == PW_STREAM_STATE_UNCONNECTED)
                     capture.fail(FrameCaptureFailure::PipeWire);
@@ -270,8 +281,11 @@ void PipeWireCapture::start(const CaptureOptions &options) {
             };
             value.process = [](void *data) {
                 auto &capture = *static_cast<Impl *>(data);
-                try { capture.process(); }
-                catch (...) { capture.fail(FrameCaptureFailure::GpuImport); }
+                try {
+                    capture.process();
+                } catch (...) {
+                    capture.fail(FrameCaptureFailure::GpuImport);
+                }
             };
             return value;
         }();
@@ -288,16 +302,17 @@ void PipeWireCapture::start(const CaptureOptions &options) {
                 continue;
             spa_pod_frame object;
             spa_pod_frame choice;
-            spa_pod_builder_push_object(&builder, &object, SPA_TYPE_OBJECT_Format, SPA_PARAM_EnumFormat);
-            spa_pod_builder_add(&builder,
-                SPA_FORMAT_mediaType, SPA_POD_Id(SPA_MEDIA_TYPE_video),
-                SPA_FORMAT_mediaSubtype, SPA_POD_Id(SPA_MEDIA_SUBTYPE_raw),
-                SPA_FORMAT_VIDEO_format, SPA_POD_Id(entry.spa),
-                SPA_FORMAT_VIDEO_size, SPA_POD_Rectangle(&size),
-                SPA_FORMAT_VIDEO_framerate, SPA_POD_CHOICE_RANGE_Fraction(&rate, &minimum_rate, &rate),
-                SPA_FORMAT_VIDEO_maxFramerate, SPA_POD_Fraction(&rate), 0);
+            spa_pod_builder_push_object(&builder, &object, SPA_TYPE_OBJECT_Format,
+                                        SPA_PARAM_EnumFormat);
+            spa_pod_builder_add(&builder, SPA_FORMAT_mediaType, SPA_POD_Id(SPA_MEDIA_TYPE_video),
+                                SPA_FORMAT_mediaSubtype, SPA_POD_Id(SPA_MEDIA_SUBTYPE_raw),
+                                SPA_FORMAT_VIDEO_format, SPA_POD_Id(entry.spa),
+                                SPA_FORMAT_VIDEO_size, SPA_POD_Rectangle(&size),
+                                SPA_FORMAT_VIDEO_framerate,
+                                SPA_POD_CHOICE_RANGE_Fraction(&rate, &minimum_rate, &rate),
+                                SPA_FORMAT_VIDEO_maxFramerate, SPA_POD_Fraction(&rate), 0);
             spa_pod_builder_prop(&builder, SPA_FORMAT_VIDEO_modifier,
-                SPA_POD_PROP_FLAG_MANDATORY | SPA_POD_PROP_FLAG_DONT_FIXATE);
+                                 SPA_POD_PROP_FLAG_MANDATORY | SPA_POD_PROP_FLAG_DONT_FIXATE);
             spa_pod_builder_push_choice(&builder, &choice, SPA_CHOICE_Enum, 0);
             spa_pod_builder_long(&builder, static_cast<std::int64_t>(modifiers.front()));
             for (auto modifier : modifiers)
@@ -307,10 +322,11 @@ void PipeWireCapture::start(const CaptureOptions &options) {
         }
         if (params.empty())
             throw FrameCaptureError(FrameCaptureFailure::GpuImport);
-        const auto flags = static_cast<pw_stream_flags>(PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_DONT_RECONNECT);
+        const auto flags = static_cast<pw_stream_flags>(PW_STREAM_FLAG_AUTOCONNECT |
+                                                        PW_STREAM_FLAG_DONT_RECONNECT);
         if (pw_stream_connect(self.stream, PW_DIRECTION_INPUT,
-                self.portal->serial().empty() ? self.portal->node() : PW_ID_ANY,
-                flags, params.data(), static_cast<std::uint32_t>(params.size())) < 0)
+                              self.portal->serial().empty() ? self.portal->node() : PW_ID_ANY,
+                              flags, params.data(), static_cast<std::uint32_t>(params.size())) < 0)
             throw FrameCaptureError(FrameCaptureFailure::PipeWire);
         self.deadline = std::chrono::steady_clock::now() + std::chrono::seconds(10);
     } catch (const FrameCaptureError &error) {
@@ -337,7 +353,8 @@ bool PipeWireCapture::poll(const Consumer &consume) {
     if (!self.failure && pw_loop_iterate(pw_main_loop_get_loop(self.loop), 0) < 0)
         self.fail(FrameCaptureFailure::PipeWire);
     self.consumer = nullptr;
-    if (!self.failure && self.metrics.delivered == 0 && std::chrono::steady_clock::now() > self.deadline)
+    if (!self.failure && self.metrics.delivered == 0 &&
+        std::chrono::steady_clock::now() > self.deadline)
         self.fail(FrameCaptureFailure::Timeout);
     if (self.failure) {
         const auto failure = *self.failure;
@@ -356,6 +373,12 @@ void PipeWireCapture::stop() {
     self.cleanup();
     self.state = FrameCaptureState::Stopped;
 }
-FrameCaptureState PipeWireCapture::state() const { impl_->check(); return impl_->state; }
-FrameCaptureMetrics PipeWireCapture::metrics() const { impl_->check(); return impl_->metrics; }
+FrameCaptureState PipeWireCapture::state() const {
+    impl_->check();
+    return impl_->state;
+}
+FrameCaptureMetrics PipeWireCapture::metrics() const {
+    impl_->check();
+    return impl_->metrics;
+}
 } // namespace cloudplay::capture

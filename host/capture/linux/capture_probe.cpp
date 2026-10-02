@@ -1,6 +1,6 @@
-#include <cloudplay/capture/pipewire_capture.hpp>
 #include <charconv>
 #include <chrono>
+#include <cloudplay/capture/pipewire_capture.hpp>
 #include <csignal>
 #include <iostream>
 #include <string_view>
@@ -21,8 +21,10 @@ int main(int argc, char **argv) {
         if (argc != 3 || std::string_view(argv[1]) != "--seconds")
             return 2;
         const std::string_view duration(argv[2]);
-        const auto [end, error] = std::from_chars(duration.data(), duration.data() + duration.size(), seconds);
-        if (error != std::errc{} || end != duration.data() + duration.size() || seconds < 1 || seconds > 120)
+        const auto [end, error] =
+            std::from_chars(duration.data(), duration.data() + duration.size(), seconds);
+        if (error != std::errc{} || end != duration.data() + duration.size() || seconds < 1 ||
+            seconds > 120)
             return 2;
     }
     std::signal(SIGINT, interrupt);
@@ -39,7 +41,8 @@ int main(int argc, char **argv) {
         bool first = true;
         while (!interrupted) {
             const bool delivered = capture.poll([](const auto &frame) {
-                if (!frame.native_image || frame.plane_count == 0 || frame.width != 1920 || frame.height != 1080)
+                if (!frame.native_image || frame.plane_count == 0 || frame.width != 1920 ||
+                    frame.height != 1080)
                     throw std::runtime_error("Invalid GPU frame");
             });
             const auto now = std::chrono::steady_clock::now();
@@ -64,22 +67,26 @@ int main(int argc, char **argv) {
                 break;
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
-        const double elapsed = std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count();
+        const double elapsed =
+            std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count();
         capture.stop();
         const auto stats = capture.metrics();
         const double fps = elapsed > 0 ? static_cast<double>(stats.delivered) / elapsed : 0;
         // Strict capture gate, not encoder/WebRTC acceptance. Static sources may be damage-driven.
         const bool stable = !interrupted && seconds >= 30 && sample_count >= 29 &&
-            minimum_fps >= 58.0 && fps >= 59.0 && stats.discarded == 0 && stats.sequence_gaps == 0 &&
-            stats.delivered == stats.gpu_imports && stats.cpu_frames == 0 && stats.latency_samples > 0;
-        std::cout << "{\"event\":\"capture.summary\",\"stable1080p60Gpu\":" << (stable ? "true" : "false")
-                  << ",\"fps\":" << fps << ",\"minimumIntervalFps\":" << (sample_count ? minimum_fps : 0)
+                            minimum_fps >= 58.0 && fps >= 59.0 && stats.discarded == 0 &&
+                            stats.sequence_gaps == 0 && stats.delivered == stats.gpu_imports &&
+                            stats.cpu_frames == 0 && stats.latency_samples > 0;
+        std::cout << "{\"event\":\"capture.summary\",\"stable1080p60Gpu\":"
+                  << (stable ? "true" : "false") << ",\"fps\":" << fps
+                  << ",\"minimumIntervalFps\":" << (sample_count ? minimum_fps : 0)
                   << ",\"received\":" << stats.received << ",\"delivered\":" << stats.delivered
-                  << ",\"discarded\":" << stats.discarded << ",\"sequenceGaps\":" << stats.sequence_gaps
-                  << ",\"width\":" << stats.width << ",\"height\":" << stats.height
-                  << ",\"drmFourcc\":" << stats.drm_format << ",\"modifier\":" << stats.modifier
-                  << ",\"gpuImports\":" << stats.gpu_imports << ",\"cpuFrames\":" << stats.cpu_frames
-                  << ",\"cpuCopies\":" << stats.cpu_copies << ",\"gpuCopies\":" << stats.gpu_copies
+                  << ",\"discarded\":" << stats.discarded
+                  << ",\"sequenceGaps\":" << stats.sequence_gaps << ",\"width\":" << stats.width
+                  << ",\"height\":" << stats.height << ",\"drmFourcc\":" << stats.drm_format
+                  << ",\"modifier\":" << stats.modifier << ",\"gpuImports\":" << stats.gpu_imports
+                  << ",\"cpuFrames\":" << stats.cpu_frames << ",\"cpuCopies\":" << stats.cpu_copies
+                  << ",\"gpuCopies\":" << stats.gpu_copies
                   << ",\"latencySamples\":" << stats.latency_samples << ",\"meanLatencyMs\":";
         if (stats.latency_samples)
             std::cout << stats.latency_sum_ms / static_cast<double>(stats.latency_samples);

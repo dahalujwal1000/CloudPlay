@@ -15,6 +15,7 @@ class GpuImporter final {
     [[nodiscard]] std::vector<std::uint64_t> modifiers(std::uint32_t format) const;
     [[nodiscard]] EGLImageKHR import(const CapturedFrame &frame) const;
     void release(EGLImageKHR image) const noexcept;
+
   private:
     EGLDisplay display_{EGL_NO_DISPLAY};
     PFNEGLQUERYDMABUFMODIFIERSEXTPROC query_{};

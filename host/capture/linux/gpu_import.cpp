@@ -56,7 +56,8 @@ GpuImporter::GpuImporter() {
         display_ = EGL_NO_DISPLAY;
         throw FrameCaptureError(FrameCaptureFailure::GpuImport);
     }
-    if (!extension(eglQueryString(display_, EGL_EXTENSIONS), "EGL_EXT_image_dma_buf_import_modifiers")) {
+    if (!extension(eglQueryString(display_, EGL_EXTENSIONS),
+                   "EGL_EXT_image_dma_buf_import_modifiers")) {
         eglTerminate(display_);
         display_ = EGL_NO_DISPLAY;
         throw FrameCaptureError(FrameCaptureFailure::GpuImport);
@@ -70,7 +71,8 @@ GpuImporter::~GpuImporter() {
 
 std::vector<std::uint64_t> GpuImporter::modifiers(std::uint32_t format) const {
     EGLint count{};
-    if (!query_(display_, static_cast<EGLint>(format), 0, nullptr, nullptr, &count) || count < 1 || count > 256)
+    if (!query_(display_, static_cast<EGLint>(format), 0, nullptr, nullptr, &count) || count < 1 ||
+        count > 256)
         return {};
     std::vector<EGLuint64KHR> values(static_cast<std::size_t>(count));
     if (!query_(display_, static_cast<EGLint>(format), count, values.data(), nullptr, &count))
@@ -82,24 +84,39 @@ std::vector<std::uint64_t> GpuImporter::modifiers(std::uint32_t format) const {
 }
 
 EGLImageKHR GpuImporter::import(const CapturedFrame &frame) const {
-    constexpr std::array<EGLint, 4> fds{EGL_DMA_BUF_PLANE0_FD_EXT, EGL_DMA_BUF_PLANE1_FD_EXT, EGL_DMA_BUF_PLANE2_FD_EXT, EGL_DMA_BUF_PLANE3_FD_EXT};
-    constexpr std::array<EGLint, 4> offsets{EGL_DMA_BUF_PLANE0_OFFSET_EXT, EGL_DMA_BUF_PLANE1_OFFSET_EXT, EGL_DMA_BUF_PLANE2_OFFSET_EXT, EGL_DMA_BUF_PLANE3_OFFSET_EXT};
-    constexpr std::array<EGLint, 4> pitches{EGL_DMA_BUF_PLANE0_PITCH_EXT, EGL_DMA_BUF_PLANE1_PITCH_EXT, EGL_DMA_BUF_PLANE2_PITCH_EXT, EGL_DMA_BUF_PLANE3_PITCH_EXT};
-    constexpr std::array<EGLint, 4> lo{EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT, EGL_DMA_BUF_PLANE1_MODIFIER_LO_EXT, EGL_DMA_BUF_PLANE2_MODIFIER_LO_EXT, EGL_DMA_BUF_PLANE3_MODIFIER_LO_EXT};
-    constexpr std::array<EGLint, 4> hi{EGL_DMA_BUF_PLANE0_MODIFIER_HI_EXT, EGL_DMA_BUF_PLANE1_MODIFIER_HI_EXT, EGL_DMA_BUF_PLANE2_MODIFIER_HI_EXT, EGL_DMA_BUF_PLANE3_MODIFIER_HI_EXT};
-    std::vector<EGLint> attributes{EGL_WIDTH, static_cast<EGLint>(frame.width), EGL_HEIGHT,
-        static_cast<EGLint>(frame.height), EGL_LINUX_DRM_FOURCC_EXT, static_cast<EGLint>(frame.drm_format)};
+    constexpr std::array<EGLint, 4> fds{EGL_DMA_BUF_PLANE0_FD_EXT, EGL_DMA_BUF_PLANE1_FD_EXT,
+                                        EGL_DMA_BUF_PLANE2_FD_EXT, EGL_DMA_BUF_PLANE3_FD_EXT};
+    constexpr std::array<EGLint, 4> offsets{
+        EGL_DMA_BUF_PLANE0_OFFSET_EXT, EGL_DMA_BUF_PLANE1_OFFSET_EXT, EGL_DMA_BUF_PLANE2_OFFSET_EXT,
+        EGL_DMA_BUF_PLANE3_OFFSET_EXT};
+    constexpr std::array<EGLint, 4> pitches{
+        EGL_DMA_BUF_PLANE0_PITCH_EXT, EGL_DMA_BUF_PLANE1_PITCH_EXT, EGL_DMA_BUF_PLANE2_PITCH_EXT,
+        EGL_DMA_BUF_PLANE3_PITCH_EXT};
+    constexpr std::array<EGLint, 4> lo{
+        EGL_DMA_BUF_PLANE0_MODIFIER_LO_EXT, EGL_DMA_BUF_PLANE1_MODIFIER_LO_EXT,
+        EGL_DMA_BUF_PLANE2_MODIFIER_LO_EXT, EGL_DMA_BUF_PLANE3_MODIFIER_LO_EXT};
+    constexpr std::array<EGLint, 4> hi{
+        EGL_DMA_BUF_PLANE0_MODIFIER_HI_EXT, EGL_DMA_BUF_PLANE1_MODIFIER_HI_EXT,
+        EGL_DMA_BUF_PLANE2_MODIFIER_HI_EXT, EGL_DMA_BUF_PLANE3_MODIFIER_HI_EXT};
+    std::vector<EGLint> attributes{EGL_WIDTH,
+                                   static_cast<EGLint>(frame.width),
+                                   EGL_HEIGHT,
+                                   static_cast<EGLint>(frame.height),
+                                   EGL_LINUX_DRM_FOURCC_EXT,
+                                   static_cast<EGLint>(frame.drm_format)};
     for (std::uint32_t i = 0; i < frame.plane_count; ++i) {
         const auto &plane = frame.planes[i];
-        attributes.insert(attributes.end(), {fds[i], plane.fd, offsets[i], static_cast<EGLint>(plane.offset), pitches[i], plane.stride});
+        attributes.insert(attributes.end(),
+                          {fds[i], plane.fd, offsets[i], static_cast<EGLint>(plane.offset),
+                           pitches[i], plane.stride});
         if (frame.modifier != DRM_FORMAT_MOD_INVALID)
-            attributes.insert(attributes.end(), {lo[i], static_cast<EGLint>(frame.modifier & 0xffffffffU), hi[i], static_cast<EGLint>(frame.modifier >> 32)});
+            attributes.insert(attributes.end(),
+                              {lo[i], static_cast<EGLint>(frame.modifier & 0xffffffffU), hi[i],
+                               static_cast<EGLint>(frame.modifier >> 32)});
     }
     attributes.push_back(EGL_NONE);
     return create_(display_, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, nullptr, attributes.data());
 }
 
-void GpuImporter::release(EGLImageKHR image) const noexcept {
-    destroy_(display_, image);
-}
+void GpuImporter::release(EGLImageKHR image) const noexcept { destroy_(display_, image); }
 } // namespace cloudplay::capture
