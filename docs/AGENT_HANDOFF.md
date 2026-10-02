@@ -17,6 +17,11 @@ captured-frame NVENC interoperability, streaming, and pairing are not implemente
 PNG series. `--cpu-capture` negotiates mapped MemFd/MemPtr packed RGB without EGL.
 Use the new immutable plain-bars reference to isolate intermittent artifacts;
 do not treat this diagnostic work as encoder or performance acceptance.
+CPU-only live retry returned all eight MemFd buffers; one PNG exactly matched the
+plain-bars reference, while seven included desktop/dialog/foreground changes.
+The full series failed (exit 3). Source-stable multi-frame acceptance remains
+unverified; do not skip mismatches to pass. All 18 combined and five default tests,
+formatting/GCC analysis and all five CI jobs pass for diagnostic-mode source.
 
 Read `AGENTS.md`, `docs/TASKS.md`, the relevant architecture documents, and ADRs
 before continuing. Preserve the game-agnostic design and the existing subsystem

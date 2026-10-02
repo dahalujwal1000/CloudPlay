@@ -136,6 +136,21 @@ Saved files: `/tmp/cloudplay-cpu-series.png` and `.2.png` through `.8.png` (priv
 Reference: `/tmp/cloudplay-static-bars-reference.png`. A visible-pattern retry is
 required; neither NVENC nor WebRTC work has started.
 
+CPU-only retry: eight acquisitions/returns, zero local discards, eight producer
+sequence gaps. Frame 2 (`/tmp/cloudplay-cpu-retry.png.2.png`) matched every RGB
+pixel of the plain-bars reference exactly. Frame 1 contained the sharing dialog;
+frame 3 contained the GNOME panel; later frames showed the IDE. Seven frames
+mismatched, so the full series correctly exited 3 and remains unaccepted.
+Do not discard these mismatches or claim sustained pixel correctness. A controlled
+native window-source test, kept visible throughout, can isolate overlays/focus
+changes from the buffer path without cropping/filtering the captured output.
+No confirmed corruption was reproduced in the supplied screenshot or exact CPU
+frame. Unprovided intermittent failures and GPU sampling still require investigation.
+
+Final diagnostic-mode verification: all 18 combined CTests, five default tests,
+clang-format 18, GCC `-fanalyzer`, and all five [CI jobs](https://github.com/dahalujwal1000/CloudPlay/actions/runs/37010793984)
+passed at source revision `4ac21355ea607facdc510035d7240e3cb81382dc`.
+
 Install libpng development headers and reconfigure/rebuild. Snapshot mode acquires
 one frame, copies RGB bytes while the producer buffer is still leased, then stops
 capture before PNG compression. Files are created with mode 0600 and existing
