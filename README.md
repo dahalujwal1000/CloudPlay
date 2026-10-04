@@ -44,15 +44,20 @@ Touch/controller → input abstraction → WebRTC DataChannel → validated host
 
 See docs/ for detailed specifications.
 
-## Foundation implementation
-The native core, Android client scaffold, and authenticated signaling diagnostics
-are verified in CI. A Windows capture module and diagnostic are implemented;
-live Windows hardware acceptance is unverified. Development now targets Linux:
-NVIDIA SDK interface headers and driver readiness diagnostics are set up, with
-H.264/HEVC synthetic hardware tests passing. Linux GPU capture now has a standalone
-diagnostic behind IFrameCapture and lifecycle tests; sustained 1080p60 acceptance
-and media streaming remain pending. See [Linux NVIDIA setup](docs/testing/linux-nvenc.md)
-and [capture checks](docs/testing/linux-capture.md).
+## Foundation implementation and current validation status
+The native core, Android client scaffold, authenticated signaling diagnostics,
+Linux capture diagnostics, input validation, game profile validation, and NVIDIA
+SDK/interface readiness checks are all passing in the repo's configured CMake
+build/test stages. This includes the Linux capture lifecycle, portal shutdown,
+frame-policy, frame-lease, NVENC driver checks, and host/input/game session
+validation suites.
+
+This is a validated stage-completion status, not a claim that the end-to-end
+cloud-gaming product is complete. Live sustained 1080p60 acceptance on a real
+desktop, captured-frame NVENC interoperability, WebRTC media transport, Android
+video, pairing/security, and remote internet connectivity remain pending.
+See [Linux NVIDIA setup](docs/testing/linux-nvenc.md), [capture checks](docs/testing/linux-capture.md),
+and the roadmap in [docs/TASKS.md](docs/TASKS.md).
 
 See [build instructions](docs/BUILDING.md), the
 [agent handoff](docs/AGENT_HANDOFF.md), and
