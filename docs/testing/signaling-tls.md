@@ -98,5 +98,12 @@ distinct identities, validation before storage, read-back mismatch/failure,
 secret-safe subprocess failures, oversized outputs and invalid CLI arguments.
 
 2026-10-06: all 23 signaling tests, TypeScript build, ESLint and Prettier passed.
-Actual Secret Service storage/lookup and a physical Android connection were not
-exercised. No saved credentials were modified and no live LAN listener was enabled.
+At that test checkpoint, actual Secret Service storage/lookup and a physical
+Android connection were not exercised; no credentials or LAN listener were created.
+
+2026-10-07 user-assisted validation: identity provisioning completed against the
+real GNOME Secret Service, and the service reported listening on the PC's private
+LAN IPv4 address using HTTPS port 8787. This verifies provisioning and startup,
+not successful phone enrollment. The phone reported authorization rejection;
+its exact request/status and cause are not yet established. Do not publish live
+pairing codes, administrator/device tokens, or private keys in diagnostic reports.

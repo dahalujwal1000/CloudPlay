@@ -58,5 +58,43 @@ On a phone, verify form layout with the keyboard visible, correct and incorrect
 fingerprints, expired/wrong codes, status refresh, disconnect, and cancellation.
 Rotate the activity during a request and confirm no connection is restored.
 Verify that no administrator credentials are requested and no secrets appear in
-logs. Physical phone-to-host and UI checks remain unverified; no media acceptance
-gate has been passed by these pairing tests.
+logs. Successful physical phone-to-host enrollment and complete UI checks remain
+unverified; no media acceptance gate has been passed by these pairing tests.
+
+## Live Status: 2026-10-07
+
+The user completed real PC TLS identity provisioning and received the HTTPS
+listening message on port 8787. The phone pairing attempt reported authorization
+rejection. Successful enrollment and authenticated health checks are still
+unverified. Do not interpret server startup as proof of a working phone session.
+
+## Terminal Troubleshooting
+
+Run all signaling commands in the same terminal, from the repository's
+`signaling/` directory. Environment variables exported in one terminal are not
+automatically available in another, and changing directories does not restore
+missing variables. Set configuration before starting the server; changing an
+export afterward does not modify an already-running server's environment.
+
+| Symptom | Action |
+| --- | --- |
+| npm ENOENT for the root package.json | Change into `signaling/`; the root is not the Node package. |
+| Cannot find dist/src/config.js | Check `pwd` ends in `/signaling`, then run `npm run build`. |
+| Shell displays `>` after a command ending in `<<'JS'` | The shell awaits the rest of a multiline block. Paste the complete block, or press Ctrl+C to cancel. |
+| No output from export | Expected: exports set variables silently. Never print a token to check it. |
+| Invalid configuration fields: token | Generate the administrator token in this terminal before server startup. |
+| Startup failed | Check config presence, TLS identity/keyring availability, certificate bind-IP match, and whether port 8787 is occupied. Do not disable TLS checks. |
+| Authorization rejected on phone | Generate a fresh challenge and enter both its UUID and eight-digit code within two minutes. A new challenge replaces the previous one; codes are one-use. |
+
+Safe token-presence check (does not print its value):
+
+```sh
+node -e 'console.log(process.env.CLOUDPLAY_TOKEN ? "Token is set" : "Token is missing")'
+```
+
+For repeated authorization rejection, record whether it follows Pair or Check
+status and the HTTP status if available, never request headers or response tokens.
+The UI's rejection message does not prove code expiry: wrong/replaced/used codes
+and failed device authorization must be distinguished. Avoid repeated guesses;
+rate limits apply. Keep the administrator token on the PC and the independently
+verified certificate fingerprint in the phone's trust field.

@@ -32,8 +32,13 @@ sharing revocation and live restart remain pending.
 See [capture session checks](testing/capture-session.md). Priority FPS investigation
 resumed on 2026-10-05: a native Wayland source verifies presentation near 60 FPS,
 but GPU monitor capture still averages 36.77 FPS and the CPU control stalled.
-Next isolate monitor/window source-node delivery; encoder and WebRTC integration
-gates remain unchanged. See [presentation controls](testing/wayland-motion-source.md).
+Follow-up on 2026-10-07 reproduced 38.1994 FPS at the default ceiling and
+40.7987 FPS with a diagnostic ceiling of 61 (actual negotiated maximum 60.0035).
+Both completed 30 seconds with balanced buffers and zero local drops/gaps, but
+neither passed acceptance. Next investigate compositor timestamp/rate limiting;
+encoder and WebRTC integration gates remain unchanged. See
+[ceiling evidence](testing/linux-capture-ceiling-2026-10-07.json) and
+[presentation controls](testing/wayland-motion-source.md).
 
 ## TASK-003 NVENC
 Implement H.264 hardware encoding and benchmark.
@@ -53,6 +58,8 @@ NVENC interoperability are verified. The capture acceptance gate has not passed.
 
 ## TASK-005 Android Video
 Receive and render WebRTC video on Android.
+
+Pending. The available Android APK contains pairing/status UI, not video playback.
 
 ## TASK-006 Input
 Implement DataChannel input protocol and host validation.
@@ -92,8 +99,21 @@ Try the local path: [game runner](testing/game-runner.md).
 ## TASK-009 Pairing
 Implement secure pairing and device identity.
 
+Implemented: expiring one-use challenges, rate limits, scoped ephemeral device
+tokens, revocation, Secret Service-backed server TLS identity provisioning, and
+Android manual certificate fingerprint confirmation with pinned HTTPS. Automated
+TLS/pairing checks pass. On 2026-10-07 the user verified real PC identity creation
+and HTTPS startup; phone enrollment failed with an authorization rejection.
+Next diagnose the rejected request and verify successful enrollment/status on the
+phone. Secure persistent device credentials, refresh/reconnect, rotation and a
+PC pairing UI remain pending. See [pairing validation](testing/android-pairing.md).
+
 ## TASK-010 Internet Connectivity
 Implement signaling, STUN, TURN and reconnect.
+
+Authenticated HTTP/HTTPS diagnostics and WebSocket status exist; these are not
+WebRTC media signaling. Private LAN HTTPS startup is verified by user output.
+Internet deployment, ICE/STUN/TURN, media negotiation and reconnect remain pending.
 
 ## TASK-011 Adaptive Streaming
 Implement bitrate adaptation and telemetry.

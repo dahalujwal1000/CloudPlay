@@ -2,6 +2,17 @@
 
 Last verified: 2026-10-07.
 
+Latest user-assisted connectivity status: PC identity provisioning succeeded
+against real Secret Service; user output confirms HTTPS listening on private LAN
+port 8787. The Android phone then reported authorization rejection. Do not mark
+phone enrollment or authenticated status as passed. Root cause is unconfirmed;
+next distinguish pairing-code rejection from post-pair health authorization,
+using fresh challenge/code and safe status-only diagnostics. No credentials,
+codes, private keys or live certificate identifiers are stored in this handoff.
+README, TASKS and Android/TLS setup guides now reflect this partial live result
+and common terminal-directory/environment mistakes. Earlier statements below
+about no real identity provisioning are historical, superseded by this update.
+
 Latest capture work: added --diagnostic-max-fps 60..65, default 60, with range
 negotiation only; nominal target remains 60. Non-default ceiling runs cannot
 report production acceptance. Added CLI, SPA parameter and option validation
