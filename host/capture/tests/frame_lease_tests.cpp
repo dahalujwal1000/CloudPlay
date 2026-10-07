@@ -1,3 +1,4 @@
+#include <cloudplay/capture/buffer_pressure.hpp>
 #include <cloudplay/capture/capture_acceptance.hpp>
 #include <cloudplay/capture/frame_capture.hpp>
 #include <cloudplay/capture/presentation_timing.hpp>
@@ -12,6 +13,9 @@ void release(void *owner, void *resource) noexcept {
 }
 void release_order(void *owner, void *resource) noexcept {
     *static_cast<int *>(resource) = ++*static_cast<int *>(owner);
+}
+void release_pressure(void *owner, void *) noexcept {
+    ++static_cast<cloudplay::capture::FrameCaptureMetrics *>(owner)->released;
 }
 } // namespace
 
@@ -45,6 +49,27 @@ int main() {
         throw std::runtime_error("GPU image not released before buffer reuse");
 
     using namespace cloudplay::capture;
+    FrameCaptureMetrics pressure;
+    buffer_added(pressure);
+    buffer_added(pressure);
+    try {
+        int first{}, second{};
+        buffer_acquired(pressure);
+        const FrameLease one(&pressure, &first, release_pressure);
+        buffer_acquired(pressure);
+        const FrameLease two(&pressure, &second, release_pressure);
+        dequeue_batch(pressure, 2);
+        throw std::runtime_error("Consumer failure with multiple borrowed buffers");
+    } catch (const std::runtime_error &) {
+    }
+    buffer_removed(pressure);
+    buffer_removed(pressure);
+    dequeue_batch(pressure, 0);
+    if (pressure.received != pressure.released || pressure.max_outstanding_buffers != 2 ||
+        pressure.buffer_pool_size != 0 || pressure.max_buffer_pool_size != 2 ||
+        pressure.dequeue_batches != 1 || pressure.multi_dequeue_batches != 1 ||
+        pressure.max_dequeue_batch != 2)
+        throw std::runtime_error("Exception/shutdown lost buffer pressure accounting");
     FrameCaptureMetrics timing_metrics;
     PresentationTiming timing;
     timing.observe(timing_metrics, 1000000000, 1001000000);
@@ -68,7 +93,7 @@ int main() {
         throw std::runtime_error("Invalid or discontinuous timestamp counted as cadence");
 
     FrameCaptureMetrics good;
-    good.delivered = good.gpu_imports = good.received = 1800;
+    good.delivered = good.gpu_imports = good.received = good.released = 1800;
     good.width = 1920;
     good.height = 1080;
     good.drm_format = 1;
@@ -79,7 +104,13 @@ int main() {
         stable_gpu_capture(good, 30.0, 59.0, 29, true) ||
         stable_gpu_capture(good, 60.0, 59.0, 29, false))
         throw std::runtime_error("Bad sustained capture gate");
-    for (int condition = 0; condition < 6; ++condition) {
+    for (const auto invalid :
+         {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::infinity()}) {
+        if (stable_gpu_capture(good, invalid, 59.0, 29, false) ||
+            stable_gpu_capture(good, 30.0, invalid, 29, false))
+            throw std::runtime_error("Nonfinite timing passed capture gate");
+    }
+    for (int condition = 0; condition < 9; ++condition) {
         auto bad = good;
         if (condition == 0)
             bad.gpu_imports = 0;
@@ -93,6 +124,12 @@ int main() {
             bad.width = 1280;
         if (condition == 5)
             bad.presentation_age_samples = 0;
+        if (condition == 6)
+            --bad.released;
+        if (condition == 7)
+            ++bad.received;
+        if (condition == 8)
+            ++bad.released;
         if (stable_gpu_capture(bad, 30.0, 59.0, 29, false))
             throw std::runtime_error("Invalid stream passed capture gate");
     }

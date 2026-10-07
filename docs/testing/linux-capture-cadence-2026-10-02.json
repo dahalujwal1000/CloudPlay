@@ -1,0 +1,1287 @@
+{
+  "date": "2026-10-02",
+  "environment": {
+    "display": "eDP-1",
+    "width": 1920,
+    "height": 1080,
+    "refreshHz": 60.003536224365234,
+    "vrrEnabled": false,
+    "mutter": "50.0-1.fc44",
+    "pipewire": "1.6.9-1.fc44",
+    "gpu": "NVIDIA GeForce RTX 3050 6GB Laptop GPU",
+    "driver": "615.71.09"
+  },
+  "source": {
+    "command": "SDL_VIDEODRIVER=wayland ffplay -f lavfi -i testsrc2=size=1920x1080:rate=60 -an -fs -autoexit -t 180 -window_title 'CloudPlay Motion Reference'",
+    "sourcePresentedFpsVerified": false,
+    "rendererVerified": false,
+    "notes": "The source was restarted between tests. FFplay's requested rate is not a measured presentation rate."
+  },
+  "runs": [
+    {
+      "name": "monitor-range",
+      "exitCode": 3,
+      "events": [
+        {
+          "event": "capture.timings",
+          "unit": "ms",
+          "percentileMethod": "nearest-rank bounded prefix",
+          "histogramUpperBoundsMs": [
+            8,
+            15,
+            18,
+            25,
+            35,
+            50,
+            null
+          ],
+          "stages": {
+            "arrivalInterval": {
+              "count": 1186,
+              "overflow": 0,
+              "mean": 25.2804,
+              "min": 14.948,
+              "max": 50.3917,
+              "p50": 32.3646,
+              "p95": 34.0127,
+              "p99": 34.3978,
+              "histogram": [
+                0,
+                1,
+                571,
+                3,
+                607,
+                3,
+                1
+              ]
+            },
+            "producerInterval": {
+              "count": 1186,
+              "overflow": 0,
+              "mean": 25.2796,
+              "min": 16.666,
+              "max": 49.997,
+              "p50": 33.32,
+              "p95": 33.334,
+              "p99": 33.338,
+              "histogram": [
+                0,
+                0,
+                575,
+                0,
+                609,
+                2,
+                0
+              ]
+            },
+            "fenceWait": {
+              "count": 1187,
+              "overflow": 0,
+              "mean": 4.61731,
+              "min": 1.59865,
+              "max": 7.80406,
+              "p50": 4.58806,
+              "p95": 5.1412,
+              "p99": 5.25868,
+              "histogram": [
+                1187,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "eglImport": {
+              "count": 1187,
+              "overflow": 0,
+              "mean": 0.392207,
+              "min": 0.208307,
+              "max": 1.16983,
+              "p50": 0.38301,
+              "p95": 0.521814,
+              "p99": 0.803507,
+              "histogram": [
+                1187,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "consumerCallback": {
+              "count": 1187,
+              "overflow": 0,
+              "mean": 0.00112761,
+              "min": 0.000316,
+              "max": 0.034859,
+              "p50": 0.000866,
+              "p95": 0.002404,
+              "p99": 0.004777,
+              "histogram": [
+                1187,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "eglCleanup": {
+              "count": 1187,
+              "overflow": 0,
+              "mean": 0.0268026,
+              "min": 0.014882,
+              "max": 0.102138,
+              "p50": 0.024579,
+              "p95": 0.04059,
+              "p99": 0.071653,
+              "histogram": [
+                1187,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "bufferRequeue": {
+              "count": 1187,
+              "overflow": 0,
+              "mean": 0.000476496,
+              "min": 0.000087,
+              "max": 0.016393,
+              "p50": 0.000351,
+              "p95": 0.001118,
+              "p99": 0.002711,
+              "histogram": [
+                1187,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "bufferHeld": {
+              "count": 1187,
+              "overflow": 0,
+              "mean": 5.0483,
+              "min": 2.19202,
+              "max": 8.27753,
+              "p50": 5.00523,
+              "p95": 5.61018,
+              "p99": 5.87628,
+              "histogram": [
+                1186,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "pollInterval": {
+              "count": 21991,
+              "overflow": 0,
+              "mean": 1.36546,
+              "min": 1.0117,
+              "max": 9.34515,
+              "p50": 1.07939,
+              "p95": 5.66891,
+              "p99": 6.50205,
+              "histogram": [
+                21988,
+                3,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        {
+          "event": "capture.summary",
+          "stable1080p60Gpu": false,
+          "fps": 39.5653,
+          "elapsedSeconds": 30.001,
+          "fixedRateRequested": false,
+          "actualSourceType": 1,
+          "nodeId": 78,
+          "diagnosticCpuCopies": 0,
+          "minimumIntervalFps": 35.9831,
+          "received": 1187,
+          "delivered": 1187,
+          "discarded": 0,
+          "sequenceGaps": 0,
+          "width": 1920,
+          "height": 1080,
+          "drmFourcc": 875713112,
+          "modifier": 0,
+          "gpuImports": 1187,
+          "cpuFrames": 0,
+          "cpuCopies": 0,
+          "gpuCopies": 0,
+          "latencySamples": 1,
+          "meanNonnegativePresentationAgeMs": 0.396621,
+          "maxNonnegativePresentationAgeMs": 0.396621,
+          "presentationAgeSamples": 1187,
+          "futureTimestamps": 1186,
+          "minimumPresentationAgeMs": -11.7621,
+          "meanPresentationAgeMs": -4.2422,
+          "presentationIntervals": 1186,
+          "meanPresentationIntervalMs": 25.2796,
+          "maxPresentationIntervalMs": 49.997,
+          "negotiatedFps": 0,
+          "negotiatedMaxFps": 60,
+          "meanGpuImportMs": 0.392207,
+          "maxGpuImportMs": 1.16983,
+          "captureOriginLatencyVerified": false,
+          "internalDriverCopies": null,
+          "nvencInteropVerified": false
+        }
+      ]
+    },
+    {
+      "name": "monitor-fixed-confirmation",
+      "exitCode": 1,
+      "events": [
+        {
+          "event": "capture.source",
+          "requestedSourceTypes": 1,
+          "actualSourceType": 1,
+          "nodeId": 81
+        },
+        {
+          "event": "capture.validation_mode",
+          "embeddedCursorRequested": false
+        },
+        {
+          "event": "capture.timings",
+          "unit": "ms",
+          "percentileMethod": "nearest-rank bounded prefix",
+          "histogramUpperBoundsMs": [
+            8,
+            15,
+            18,
+            25,
+            35,
+            50,
+            null
+          ],
+          "stages": {
+            "arrivalInterval": {
+              "count": 0,
+              "overflow": 0,
+              "mean": 0,
+              "min": 0,
+              "max": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "histogram": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "producerInterval": {
+              "count": 0,
+              "overflow": 0,
+              "mean": 0,
+              "min": 0,
+              "max": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "histogram": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "fenceWait": {
+              "count": 0,
+              "overflow": 0,
+              "mean": 0,
+              "min": 0,
+              "max": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "histogram": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "eglImport": {
+              "count": 0,
+              "overflow": 0,
+              "mean": 0,
+              "min": 0,
+              "max": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "histogram": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "consumerCallback": {
+              "count": 0,
+              "overflow": 0,
+              "mean": 0,
+              "min": 0,
+              "max": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "histogram": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "eglCleanup": {
+              "count": 0,
+              "overflow": 0,
+              "mean": 0,
+              "min": 0,
+              "max": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "histogram": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "bufferRequeue": {
+              "count": 0,
+              "overflow": 0,
+              "mean": 0,
+              "min": 0,
+              "max": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "histogram": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "bufferHeld": {
+              "count": 0,
+              "overflow": 0,
+              "mean": 0,
+              "min": 0,
+              "max": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "histogram": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "pollInterval": {
+              "count": 6,
+              "overflow": 0,
+              "mean": 1.1103,
+              "min": 1.08217,
+              "max": 1.17323,
+              "p50": 1.09389,
+              "p95": 1.17323,
+              "p99": 1.17323,
+              "histogram": [
+                6,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        {
+          "event": "capture.buffer",
+          "spaFormat": 0,
+          "spaFormatName": "unsupported",
+          "requestedPath": "packed RGB capture; optional EGL import",
+          "explicitSyncPresent": false,
+          "implicitFencesReady": false,
+          "eglImageImported": false,
+          "planeCount": 0,
+          "planes": [],
+          "cropPresent": false,
+          "crop": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "transformPresent": false,
+          "transform": 0
+        },
+        {
+          "event": "capture.failed",
+          "reason": 4,
+          "operation": "pipewire.stream_error",
+          "nativeCode": 0,
+          "width": 0,
+          "height": 0,
+          "drmFourcc": 0,
+          "gpuImports": 0,
+          "received": 0,
+          "released": 0,
+          "delivered": 0,
+          "sequenceGaps": 0,
+          "cpuFrames": 0,
+          "discarded": 0,
+          "negotiatedFps": 0,
+          "negotiatedMaxFps": 0,
+          "maxGpuImportMs": 0,
+          "fixedRateRequested": true,
+          "requestedSourceTypes": 1,
+          "actualSourceType": 1,
+          "nodeId": 81,
+          "pipewireErrorObject": 0,
+          "pipewireErrorSequence": 0,
+          "streamState": -1,
+          "backendError": "no more input formats",
+          "stable1080p60Gpu": false
+        }
+      ]
+    },
+    {
+      "name": "window-range-interrupted",
+      "exitCode": 1,
+      "events": [
+        {
+          "event": "capture.timings",
+          "unit": "ms",
+          "percentileMethod": "nearest-rank bounded prefix",
+          "histogramUpperBoundsMs": [
+            8,
+            15,
+            18,
+            25,
+            35,
+            50,
+            null
+          ],
+          "stages": {
+            "arrivalInterval": {
+              "count": 642,
+              "overflow": 0,
+              "mean": 25.6014,
+              "min": 15.7307,
+              "max": 34.7114,
+              "p50": 32.4838,
+              "p95": 33.688,
+              "p99": 34.2299,
+              "histogram": [
+                0,
+                0,
+                295,
+                3,
+                344,
+                0,
+                0
+              ]
+            },
+            "producerInterval": {
+              "count": 642,
+              "overflow": 0,
+              "mean": 25.6016,
+              "min": 16.666,
+              "max": 33.672,
+              "p50": 32.894,
+              "p95": 33.38,
+              "p99": 33.446,
+              "histogram": [
+                0,
+                0,
+                297,
+                1,
+                344,
+                0,
+                0
+              ]
+            },
+            "fenceWait": {
+              "count": 643,
+              "overflow": 0,
+              "mean": 9.12735,
+              "min": 8.5387,
+              "max": 11.7429,
+              "p50": 9.08759,
+              "p95": 9.66212,
+              "p99": 9.80725,
+              "histogram": [
+                0,
+                643,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "eglImport": {
+              "count": 643,
+              "overflow": 0,
+              "mean": 0.35365,
+              "min": 0.161436,
+              "max": 1.20914,
+              "p50": 0.314523,
+              "p95": 0.629292,
+              "p99": 0.960054,
+              "histogram": [
+                643,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "consumerCallback": {
+              "count": 643,
+              "overflow": 0,
+              "mean": 0.00114384,
+              "min": 0.000226,
+              "max": 0.032567,
+              "p50": 0.00095,
+              "p95": 0.001988,
+              "p99": 0.004593,
+              "histogram": [
+                643,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "eglCleanup": {
+              "count": 643,
+              "overflow": 0,
+              "mean": 0.0231147,
+              "min": 0.013289,
+              "max": 0.097113,
+              "p50": 0.0205,
+              "p95": 0.03484,
+              "p99": 0.073523,
+              "histogram": [
+                643,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "bufferRequeue": {
+              "count": 643,
+              "overflow": 0,
+              "mean": 0.000508796,
+              "min": 0.000079,
+              "max": 0.015291,
+              "p50": 0.000417,
+              "p95": 0.000836,
+              "p99": 0.002487,
+              "histogram": [
+                643,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "bufferHeld": {
+              "count": 643,
+              "overflow": 0,
+              "mean": 9.51703,
+              "min": 8.80593,
+              "max": 12.0632,
+              "p50": 9.47002,
+              "p95": 10.1537,
+              "p99": 10.6062,
+              "histogram": [
+                0,
+                643,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "pollInterval": {
+              "count": 9521,
+              "overflow": 0,
+              "mean": 1.72924,
+              "min": 1.00476,
+              "max": 13.1691,
+              "p50": 1.07848,
+              "p95": 10.3446,
+              "p99": 11.0089,
+              "histogram": [
+                8878,
+                643,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        {
+          "event": "capture.buffer",
+          "spaFormat": 8,
+          "spaFormatName": "BGRx",
+          "requestedPath": "packed RGB capture; optional EGL import",
+          "explicitSyncPresent": false,
+          "implicitFencesReady": true,
+          "eglImageImported": true,
+          "planeCount": 1,
+          "planes": [
+            {
+              "memoryType": 3,
+              "memoryTypeName": "DmaBuf",
+              "dataFlags": 1,
+              "isDmaBuf": true,
+              "mapOffset": 0,
+              "chunkOffset": 0,
+              "effectiveOffset": 0,
+              "chunkSize": 8294400,
+              "maxSize": 8294400,
+              "stride": 7680
+            }
+          ],
+          "cropPresent": true,
+          "crop": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transformPresent": false,
+          "transform": 0
+        },
+        {
+          "event": "capture.failed",
+          "reason": 1,
+          "operation": "pipewire.capture",
+          "nativeCode": 0,
+          "width": 1920,
+          "height": 1080,
+          "drmFourcc": 875713112,
+          "gpuImports": 643,
+          "cpuFrames": 0,
+          "discarded": 0,
+          "negotiatedFps": 0,
+          "negotiatedMaxFps": 60,
+          "maxGpuImportMs": 1.20914,
+          "fixedRateRequested": false,
+          "requestedSourceTypes": 2,
+          "actualSourceType": 2,
+          "nodeId": 78,
+          "pipewireErrorObject": 0,
+          "pipewireErrorSequence": 0,
+          "streamState": 2,
+          "backendError": "",
+          "stable1080p60Gpu": false
+        }
+      ]
+    },
+    {
+      "name": "window-fixed",
+      "exitCode": 1,
+      "events": [
+        {
+          "event": "capture.source",
+          "requestedSourceTypes": 2,
+          "actualSourceType": 2,
+          "nodeId": 81
+        },
+        {
+          "event": "capture.validation_mode",
+          "embeddedCursorRequested": false
+        },
+        {
+          "event": "capture.timings",
+          "unit": "ms",
+          "percentileMethod": "nearest-rank bounded prefix",
+          "histogramUpperBoundsMs": [
+            8,
+            15,
+            18,
+            25,
+            35,
+            50,
+            null
+          ],
+          "stages": {
+            "arrivalInterval": {
+              "count": 0,
+              "overflow": 0,
+              "mean": 0,
+              "min": 0,
+              "max": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "histogram": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "producerInterval": {
+              "count": 0,
+              "overflow": 0,
+              "mean": 0,
+              "min": 0,
+              "max": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "histogram": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "fenceWait": {
+              "count": 0,
+              "overflow": 0,
+              "mean": 0,
+              "min": 0,
+              "max": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "histogram": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "eglImport": {
+              "count": 0,
+              "overflow": 0,
+              "mean": 0,
+              "min": 0,
+              "max": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "histogram": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "consumerCallback": {
+              "count": 0,
+              "overflow": 0,
+              "mean": 0,
+              "min": 0,
+              "max": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "histogram": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "eglCleanup": {
+              "count": 0,
+              "overflow": 0,
+              "mean": 0,
+              "min": 0,
+              "max": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "histogram": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "bufferRequeue": {
+              "count": 0,
+              "overflow": 0,
+              "mean": 0,
+              "min": 0,
+              "max": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "histogram": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "bufferHeld": {
+              "count": 0,
+              "overflow": 0,
+              "mean": 0,
+              "min": 0,
+              "max": 0,
+              "p50": 0,
+              "p95": 0,
+              "p99": 0,
+              "histogram": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "pollInterval": {
+              "count": 7,
+              "overflow": 0,
+              "mean": 1.12571,
+              "min": 1.03908,
+              "max": 1.23002,
+              "p50": 1.08779,
+              "p95": 1.23002,
+              "p99": 1.23002,
+              "histogram": [
+                7,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        {
+          "event": "capture.buffer",
+          "spaFormat": 0,
+          "spaFormatName": "unsupported",
+          "requestedPath": "packed RGB capture; optional EGL import",
+          "explicitSyncPresent": false,
+          "implicitFencesReady": false,
+          "eglImageImported": false,
+          "planeCount": 0,
+          "planes": [],
+          "cropPresent": false,
+          "crop": [
+            0,
+            0,
+            0,
+            0
+          ],
+          "transformPresent": false,
+          "transform": 0
+        },
+        {
+          "event": "capture.failed",
+          "reason": 4,
+          "operation": "pipewire.stream_error",
+          "nativeCode": 0,
+          "width": 0,
+          "height": 0,
+          "drmFourcc": 0,
+          "gpuImports": 0,
+          "cpuFrames": 0,
+          "discarded": 0,
+          "negotiatedFps": 0,
+          "negotiatedMaxFps": 0,
+          "maxGpuImportMs": 0,
+          "fixedRateRequested": true,
+          "requestedSourceTypes": 2,
+          "actualSourceType": 2,
+          "nodeId": 81,
+          "pipewireErrorObject": 0,
+          "pipewireErrorSequence": 0,
+          "streamState": -1,
+          "backendError": "no more input formats",
+          "stable1080p60Gpu": false
+        }
+      ]
+    },
+    {
+      "name": "window-range-completed",
+      "exitCode": 3,
+      "events": [
+        {
+          "event": "capture.source",
+          "requestedSourceTypes": 2,
+          "actualSourceType": 2,
+          "nodeId": 81
+        },
+        {
+          "event": "capture.validation_mode",
+          "embeddedCursorRequested": false
+        },
+        {
+          "event": "capture.format",
+          "width": 1920,
+          "height": 1080,
+          "drmFourcc": 875713112,
+          "modifier": 0
+        },
+        {
+          "event": "capture.buffer",
+          "spaFormat": 8,
+          "spaFormatName": "BGRx",
+          "requestedPath": "packed RGB capture; optional EGL import",
+          "explicitSyncPresent": false,
+          "implicitFencesReady": true,
+          "eglImageImported": true,
+          "planeCount": 1,
+          "planes": [
+            {
+              "memoryType": 3,
+              "memoryTypeName": "DmaBuf",
+              "dataFlags": 1,
+              "isDmaBuf": true,
+              "mapOffset": 0,
+              "chunkOffset": 0,
+              "effectiveOffset": 0,
+              "chunkSize": 8294400,
+              "maxSize": 8294400,
+              "stride": 7680
+            }
+          ],
+          "cropPresent": true,
+          "crop": [
+            0,
+            0,
+            1920,
+            1080
+          ],
+          "transformPresent": false,
+          "transform": 0
+        },
+        {
+          "event": "capture.timings",
+          "unit": "ms",
+          "percentileMethod": "nearest-rank bounded prefix",
+          "histogramUpperBoundsMs": [
+            8,
+            15,
+            18,
+            25,
+            35,
+            50,
+            null
+          ],
+          "stages": {
+            "arrivalInterval": {
+              "count": 1226,
+              "overflow": 0,
+              "mean": 24.4771,
+              "min": 15.4774,
+              "max": 37.2333,
+              "p50": 21.9103,
+              "p95": 33.6024,
+              "p99": 34.1837,
+              "histogram": [
+                0,
+                0,
+                311,
+                411,
+                501,
+                3,
+                0
+              ]
+            },
+            "producerInterval": {
+              "count": 1226,
+              "overflow": 0,
+              "mean": 24.4771,
+              "min": 16.666,
+              "max": 37.62,
+              "p50": 21.767,
+              "p95": 33.337,
+              "p99": 33.71,
+              "histogram": [
+                0,
+                0,
+                294,
+                424,
+                506,
+                2,
+                0
+              ]
+            },
+            "fenceWait": {
+              "count": 1227,
+              "overflow": 0,
+              "mean": 11.1184,
+              "min": 8.42174,
+              "max": 17.7173,
+              "p50": 10.2888,
+              "p95": 15.9298,
+              "p99": 17.1486,
+              "histogram": [
+                0,
+                1149,
+                78,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "eglImport": {
+              "count": 1227,
+              "overflow": 0,
+              "mean": 0.350603,
+              "min": 0.175612,
+              "max": 1.3626,
+              "p50": 0.309919,
+              "p95": 0.654649,
+              "p99": 0.982763,
+              "histogram": [
+                1227,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "consumerCallback": {
+              "count": 1227,
+              "overflow": 0,
+              "mean": 0.00133735,
+              "min": 0.00024,
+              "max": 0.030569,
+              "p50": 0.001004,
+              "p95": 0.003269,
+              "p99": 0.005473,
+              "histogram": [
+                1227,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "eglCleanup": {
+              "count": 1227,
+              "overflow": 0,
+              "mean": 0.0262588,
+              "min": 0.012002,
+              "max": 0.377462,
+              "p50": 0.022296,
+              "p95": 0.048321,
+              "p99": 0.088158,
+              "histogram": [
+                1227,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "bufferRequeue": {
+              "count": 1227,
+              "overflow": 0,
+              "mean": 0.00067127,
+              "min": 0.000041,
+              "max": 0.004649,
+              "p50": 0.000535,
+              "p95": 0.00162,
+              "p99": 0.002777,
+              "histogram": [
+                1227,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "bufferHeld": {
+              "count": 1227,
+              "overflow": 0,
+              "mean": 11.51,
+              "min": 8.83418,
+              "max": 18.2309,
+              "p50": 10.7135,
+              "p95": 16.413,
+              "p99": 17.5034,
+              "histogram": [
+                0,
+                1129,
+                94,
+                4,
+                0,
+                0,
+                0
+              ]
+            },
+            "pollInterval": {
+              "count": 14609,
+              "overflow": 0,
+              "mean": 2.05524,
+              "min": 1.00916,
+              "max": 19.3059,
+              "p50": 1.08004,
+              "p95": 11.1034,
+              "p99": 15.6482,
+              "histogram": [
+                13383,
+                1011,
+                173,
+                42,
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        {
+          "event": "capture.summary",
+          "stable1080p60Gpu": false,
+          "fps": 40.89,
+          "elapsedSeconds": 30.0074,
+          "fixedRateRequested": false,
+          "actualSourceType": 2,
+          "nodeId": 81,
+          "diagnosticCpuCopies": 0,
+          "minimumIntervalFps": 38.9583,
+          "received": 1227,
+          "delivered": 1227,
+          "discarded": 0,
+          "sequenceGaps": 0,
+          "width": 1920,
+          "height": 1080,
+          "drmFourcc": 875713112,
+          "modifier": 0,
+          "gpuImports": 1227,
+          "cpuFrames": 0,
+          "cpuCopies": 0,
+          "gpuCopies": 0,
+          "latencySamples": 1227,
+          "meanNonnegativePresentationAgeMs": 0.848865,
+          "maxNonnegativePresentationAgeMs": 2.48005,
+          "presentationAgeSamples": 1227,
+          "futureTimestamps": 0,
+          "minimumPresentationAgeMs": 0.186373,
+          "meanPresentationAgeMs": 0.848865,
+          "presentationIntervals": 1226,
+          "meanPresentationIntervalMs": 24.4771,
+          "maxPresentationIntervalMs": 37.62,
+          "negotiatedFps": 0,
+          "negotiatedMaxFps": 60,
+          "meanGpuImportMs": 0.350603,
+          "maxGpuImportMs": 1.3626,
+          "captureOriginLatencyVerified": false,
+          "internalDriverCopies": null,
+          "nvencInteropVerified": false
+        }
+      ]
+    }
+  ],
+  "acceptancePassed": false
+}

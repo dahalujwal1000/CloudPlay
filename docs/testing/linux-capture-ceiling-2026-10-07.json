@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-07",
+  "environment": {
+    "mutter": "50.0-1.fc44",
+    "pipewire": "1.6.9-1.fc44",
+    "displayHz": 60.003536224365234,
+    "resolution": [1920, 1080],
+    "vrr": false,
+    "displaySettingsChanged": false,
+    "source": "NVIDIA native motion reference with composition control"
+  },
+  "baseline": {
+    "rawReport": "build/capture-validation-20261007/report.json",
+    "elapsedSeconds": 30.0005,
+    "fps": 38.1994,
+    "minimumIntervalFps": 34.9801,
+    "negotiatedMaxFps": 60,
+    "received": 1146,
+    "delivered": 1146,
+    "released": 1146,
+    "sequenceGaps": 0,
+    "discarded": 0,
+    "bufferHeldP99Ms": 6.88394,
+    "producerIntervalP99Ms": 33.339
+  },
+  "ceiling61": {
+    "rawReport": "build/capture-validation-20261007/ceiling61.jsonl",
+    "elapsedSeconds": 30.001,
+    "fps": 40.7987,
+    "minimumIntervalFps": 36.973,
+    "requestedMaxFps": 61,
+    "negotiatedMaxFps": 60.0035,
+    "received": 1224,
+    "delivered": 1224,
+    "released": 1224,
+    "sequenceGaps": 0,
+    "discarded": 0,
+    "bufferHeldP99Ms": 6.83869,
+    "producerIntervalP99Ms": 33.338
+  },
+  "bothRuns": {
+    "memoryType": "DmaBuf",
+    "spaFormat": "BGRx",
+    "modifier": 0,
+    "cpuCopies": 0,
+    "gpuCopies": 0,
+    "outstandingBuffers": 0,
+    "pixelValidationPerformed": false,
+    "stable1080p60Gpu": false,
+    "nvencInteropVerified": false
+  },
+  "interpretation": "Raising the requested ceiling does not resolve the gate. The producer caps negotiation to display refresh. No causal improvement is established by this single comparison; compositor timestamp/rate-limit tracing remains necessary."
+}

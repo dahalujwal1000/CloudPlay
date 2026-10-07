@@ -1,0 +1,18 @@
+{
+  "test": "GNOME RemoteDesktop consent-only lifecycle",
+  "command": "build/linux-input/host/cloudplay_linux_input_probe --seconds 5",
+  "result": {
+    "ok": true,
+    "seconds": 5.00249,
+    "pointer_test": false,
+    "granted_devices": 3,
+    "native_calls": 0,
+    "native_failures": 0,
+    "dispatched": 0,
+    "release_failures": 0
+  },
+  "exit_code": 0,
+  "input_delivery_verified": false,
+  "live_revocation_verified": false,
+  "limitations": "Permission and lifecycle only. No keyboard, mouse-button or motion events were emitted."
+}

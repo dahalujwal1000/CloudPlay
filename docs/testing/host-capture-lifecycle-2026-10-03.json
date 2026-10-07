@@ -1,0 +1,80 @@
+{
+  "date": "2026-10-03",
+  "command": "build/capture-and-nvenc/host/cloudplay_host --capture-seconds 5",
+  "processExitCode": 0,
+  "records": [
+    {
+      "timestampMs": 1791012175092,
+      "component": "Host.App",
+      "event": "session.transition",
+      "from": "OFFLINE",
+      "to": "STARTING",
+      "trigger": "START"
+    },
+    {
+      "timestampMs": 1791012175092,
+      "component": "Host.App",
+      "event": "session.transition",
+      "from": "STARTING",
+      "to": "READY",
+      "trigger": "INITIALIZED"
+    },
+    {
+      "component": "Host.App",
+      "event": "host.capture_state",
+      "state": "STARTING"
+    },
+    {
+      "component": "Host.App",
+      "event": "host.capture_state",
+      "state": "CAPTURING"
+    },
+    {
+      "component": "Host.App",
+      "event": "host.capture_state",
+      "state": "STOPPED"
+    },
+    {
+      "component": "Host.App",
+      "event": "host.capture_summary",
+      "exitCode": 0,
+      "elapsedSeconds": 5.00727,
+      "received": 181,
+      "released": 181,
+      "delivered": 181,
+      "allBuffersReturned": true,
+      "gpuImports": 181,
+      "cpuFrames": 0,
+      "discarded": 0,
+      "sequenceGaps": 0,
+      "width": 1920,
+      "height": 1080,
+      "startAttempts": 1,
+      "failures": 0,
+      "stopFailures": 0,
+      "cleanupFailed": false,
+      "performanceAcceptanceEvaluated": false,
+      "nvencInteropVerified": false
+    },
+    {
+      "timestampMs": 1791012197336,
+      "component": "Host.App",
+      "event": "session.transition",
+      "from": "READY",
+      "to": "STOPPING",
+      "trigger": "STOP"
+    },
+    {
+      "timestampMs": 1791012197336,
+      "component": "Host.App",
+      "event": "session.transition",
+      "from": "STOPPING",
+      "to": "OFFLINE",
+      "trigger": "STOPPED"
+    }
+  ],
+  "performanceAcceptanceEvaluated": false,
+  "nvencInteropVerified": false,
+  "sharingRevocationTested": false,
+  "liveRestartTested": false
+}

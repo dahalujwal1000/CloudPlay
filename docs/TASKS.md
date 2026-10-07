@@ -4,6 +4,9 @@
 Create repository, CMake, Android project, CI, formatting, linting, test frameworks, config, logging.
 
 Status: foundation scaffolding verified locally and in Linux/Windows/Android/signaling CI.
+The 2026-10-05 CI update enables all implemented Linux backends and builds with
+clang-tidy using target compiler arguments. Its clean local build, analysis and
+46 native tests pass; execution of the updated hosted workflow remains pending.
 See [acceptance criteria](tasks/TASK-001-foundation.md) and [agent handoff](AGENT_HANDOFF.md).
 
 ## TASK-002 Host Capture
@@ -26,8 +29,11 @@ retries are performed. Host executable wiring is implemented as an opt-in Linux
 capture diagnostic; live recovery verification remains pending.
 Live host consent/start/timed shutdown passed with all GPU buffers returned;
 sharing revocation and live restart remain pending.
-See [capture session checks](testing/capture-session.md). FPS tuning is deferred
-at the user's request; encoder and WebRTC integration gates remain unchanged.
+See [capture session checks](testing/capture-session.md). Priority FPS investigation
+resumed on 2026-10-05: a native Wayland source verifies presentation near 60 FPS,
+but GPU monitor capture still averages 36.77 FPS and the CPU control stalled.
+Next isolate monitor/window source-node delivery; encoder and WebRTC integration
+gates remain unchanged. See [presentation controls](testing/wayland-motion-source.md).
 
 ## TASK-003 NVENC
 Implement H.264 hardware encoding and benchmark.

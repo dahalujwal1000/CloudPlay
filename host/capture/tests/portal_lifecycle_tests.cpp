@@ -14,6 +14,7 @@ constexpr auto xml = R"(<node>
 <method name='SelectSources'><arg type='o' direction='in'/><arg type='a{sv}' direction='in'/><arg type='o' direction='out'/></method>
 <method name='Start'><arg type='o' direction='in'/><arg type='s' direction='in'/><arg type='a{sv}' direction='in'/><arg type='o' direction='out'/></method>
 <property name='AvailableCursorModes' type='u' access='read'/>
+<property name='AvailableSourceTypes' type='u' access='read'/>
 </interface><interface name='org.freedesktop.portal.Session'><method name='Close'/></interface>
 </node>)";
 constexpr auto session_path = "/org/freedesktop/portal/desktop/session/test/session";
@@ -68,11 +69,17 @@ class TestPortal final {
     std::atomic<unsigned> closes{};
     std::atomic<unsigned> denied_stage{2};
     std::atomic<unsigned> cursor_modes{3}, embedded_requests{};
+    std::atomic<unsigned> source_types{7};
+    std::atomic<unsigned> returned_source{1};
+    std::array<std::atomic<unsigned>, 4> source_requests{};
 
   private:
     static GVariant *property(GDBusConnection *, const gchar *, const gchar *, const gchar *,
-                              const gchar *, GError **, gpointer data) {
-        return g_variant_new_uint32(static_cast<TestPortal *>(data)->cursor_modes);
+                              const gchar *name, GError **, gpointer data) {
+        auto &server = *static_cast<TestPortal *>(data);
+        return g_variant_new_uint32(std::string_view(name) == "AvailableSourceTypes"
+                                        ? server.source_types.load()
+                                        : server.cursor_modes.load());
     }
     static void method(GDBusConnection *bus, const gchar *sender, const gchar *, const gchar *,
                        const gchar *name, GVariant *parameters, GDBusMethodInvocation *invocation,
@@ -87,6 +94,9 @@ class TestPortal final {
         const char *token{};
         g_variant_lookup(options, "handle_token", "&s", &token);
         if (std::string_view(name) == "SelectSources") {
+            guint types{};
+            if (g_variant_lookup(options, "types", "u", &types) && types < 4)
+                ++server.source_requests[types];
             guint mode{};
             if (g_variant_lookup(options, "cursor_mode", "u", &mode) && mode == 2)
                 ++server.embedded_requests;
@@ -100,6 +110,16 @@ class TestPortal final {
         if (std::string_view(name) == "CreateSession")
             g_variant_builder_add(&results, "{sv}", "session_handle",
                                   g_variant_new_string(session_path));
+        if (std::string_view(name) == "Start" && server.denied_stage != 2) {
+            GVariantBuilder stream_properties, streams;
+            g_variant_builder_init(&stream_properties, G_VARIANT_TYPE_VARDICT);
+            g_variant_builder_add(&stream_properties, "{sv}", "source_type",
+                                  g_variant_new_uint32(server.returned_source));
+            g_variant_builder_init(&streams, G_VARIANT_TYPE("a(ua{sv})"));
+            g_variant_builder_add(&streams, "(u@a{sv})", 42U,
+                                  g_variant_builder_end(&stream_properties));
+            g_variant_builder_add(&results, "{sv}", "streams", g_variant_builder_end(&streams));
+        }
         g_dbus_method_invocation_return_value(invocation, g_variant_new("(o)", path.c_str()));
         const auto stage = std::string_view(name) == "CreateSession"   ? 0U
                            : std::string_view(name) == "SelectSources" ? 1U
@@ -130,6 +150,9 @@ int main() {
                     try {
                         cloudplay::capture::CaptureOptions options;
                         options.embedded_cursor = i == 2;
+                        options.source = i == 0   ? cloudplay::capture::CaptureSource::Monitor
+                                         : i == 1 ? cloudplay::capture::CaptureSource::Window
+                                                  : cloudplay::capture::CaptureSource::Any;
                         capture.start(options);
                         throw std::runtime_error("Cancelled portal accepted");
                     } catch (const cloudplay::capture::FrameCaptureError &error) {
@@ -154,6 +177,46 @@ int main() {
         }
         if (server.embedded_requests != 2)
             throw std::runtime_error("Embedded cursor not requested at SelectSources");
+        if (server.source_requests[1] != 2 || server.source_requests[2] != 2 ||
+            server.source_requests[3] != 2)
+            throw std::runtime_error("Incorrect monitor/window source selection");
+        server.denied_stage = 3;
+        for (unsigned returned : {2U, 4U}) {
+            server.returned_source = returned;
+            cloudplay::capture::PipeWireCapture mismatch_capture;
+            cloudplay::capture::CaptureOptions mismatch_options;
+            mismatch_options.source = cloudplay::capture::CaptureSource::Monitor;
+            bool mismatch{};
+            try {
+                mismatch_capture.start(mismatch_options);
+            } catch (const cloudplay::capture::FrameCaptureError &error) {
+                mismatch =
+                    error.reason == cloudplay::capture::FrameCaptureFailure::UnsupportedFormat &&
+                    error.operation == "portal.unexpected_source_type";
+            }
+            mismatch_capture.stop();
+            ++expected_closes;
+            if (!mismatch || server.closes != expected_closes)
+                throw std::runtime_error("Unexpected portal source accepted or leaked session");
+        }
+        server.source_types = 1;
+        {
+            cloudplay::capture::PipeWireCapture source_capture;
+            cloudplay::capture::CaptureOptions source_options;
+            source_options.source = cloudplay::capture::CaptureSource::Window;
+            bool unavailable{};
+            try {
+                source_capture.start(source_options);
+            } catch (const cloudplay::capture::FrameCaptureError &error) {
+                unavailable =
+                    error.reason == cloudplay::capture::FrameCaptureFailure::UnsupportedFormat &&
+                    error.operation == "portal.requested_source_unavailable";
+            }
+            source_capture.stop();
+            if (!unavailable || server.closes != expected_closes)
+                throw std::runtime_error(
+                    "Unavailable window source was not rejected before session creation");
+        }
         server.cursor_modes = 1;
         cloudplay::capture::PipeWireCapture capture;
         cloudplay::capture::CaptureOptions options;

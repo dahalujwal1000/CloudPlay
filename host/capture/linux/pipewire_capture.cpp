@@ -1,8 +1,10 @@
 #include "gpu_import.hpp"
 #include "portal_session.hpp"
+#include "video_rate.hpp"
 #include <algorithm>
 #include <chrono>
 #include <climits>
+#include <cloudplay/capture/buffer_pressure.hpp>
 #include <cloudplay/capture/pipewire_capture.hpp>
 #include <cloudplay/capture/presentation_timing.hpp>
 #include <drm_fourcc.h>
@@ -57,7 +59,13 @@ struct PipeWireCapture::Impl {
     std::exception_ptr consumer_error;
     std::optional<std::uint64_t> last_sequence;
     PresentationTiming presentation_timing;
+    std::array<TimingSamples, 9> timings;
+    std::optional<std::chrono::steady_clock::time_point> last_arrival, last_poll;
     std::chrono::steady_clock::time_point deadline;
+
+    TimingSamples *timing(CaptureTimingStage stage) noexcept {
+        return options.timing_diagnostics ? &timings[static_cast<std::size_t>(stage)] : nullptr;
+    }
 
     void check() const {
         if (owner != std::this_thread::get_id())
@@ -69,6 +77,14 @@ struct PipeWireCapture::Impl {
             failure_stage = stage;
         }
         state = FrameCaptureState::Failed;
+    }
+    void error_message(const char *message) noexcept {
+        if (!message)
+            return;
+        std::size_t i{};
+        for (; i + 1 < metrics.backend_error.size() && message[i]; ++i)
+            metrics.backend_error[i] = message[i];
+        metrics.backend_error_truncated = i + 1 == metrics.backend_error.size() && message[i];
     }
     void cleanup() noexcept {
         if (stream) {
@@ -93,7 +109,11 @@ struct PipeWireCapture::Impl {
         portal.reset();
     }
     void release_buffer(pw_buffer *buffer) noexcept {
-        const int result = pw_stream_queue_buffer(stream, buffer);
+        int result;
+        {
+            const CaptureStageTimer timer(timing(CaptureTimingStage::Requeue));
+            result = pw_stream_queue_buffer(stream, buffer);
+        }
         if (result < 0) {
             metrics.native_error = result;
             fail(FrameCaptureFailure::PipeWire, "pipewire.return_buffer");
@@ -138,9 +158,13 @@ struct PipeWireCapture::Impl {
         std::uint8_t storage[1024];
         auto builder = SPA_POD_BUILDER_INIT(storage, sizeof(storage));
         const spa_pod *params[4];
+        metrics.requested_buffer_pool_size = options.buffer_pool_size;
+        metrics.requested_min_buffer_pool_size = 2;
+        metrics.requested_max_buffer_pool_size = 8;
         params[0] = static_cast<spa_pod *>(spa_pod_builder_add_object(
             &builder, SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers, SPA_PARAM_BUFFERS_buffers,
-            SPA_POD_CHOICE_RANGE_Int(4, 2, 8), SPA_PARAM_BUFFERS_dataType,
+            SPA_POD_CHOICE_RANGE_Int(static_cast<int>(options.buffer_pool_size), 2, 8),
+            SPA_PARAM_BUFFERS_dataType,
             SPA_POD_CHOICE_FLAGS_Int(options.cpu_capture
                                          ? (1 << SPA_DATA_MemFd) | (1 << SPA_DATA_MemPtr)
                                          : (1 << SPA_DATA_DmaBuf))));
@@ -162,11 +186,23 @@ struct PipeWireCapture::Impl {
     void process() {
         // Bounded draining: keep only the newest of at most eight available buffers.
         pw_buffer *latest{};
+        std::chrono::steady_clock::time_point acquired;
+        std::int64_t arrival_ns{};
+        std::uint64_t batch{};
         for (unsigned i = 0; i < 8; ++i) {
             auto *next = pw_stream_dequeue_buffer(stream);
             if (!next)
                 break;
-            ++metrics.received;
+            ++batch;
+            const auto arrival = std::chrono::steady_clock::now();
+            timespec now{};
+            clock_gettime(CLOCK_MONOTONIC, &now);
+            arrival_ns = static_cast<std::int64_t>(now.tv_sec) * 1000000000LL + now.tv_nsec;
+            if (auto *samples = timing(CaptureTimingStage::Arrival); samples && last_arrival)
+                samples->observe(
+                    std::chrono::duration<double, std::milli>(arrival - *last_arrival).count());
+            last_arrival = arrival;
+            buffer_acquired(metrics);
             if (options.capture_diagnostics)
                 std::cout << "{\"event\":\"capture.acquire\",\"received\":" << metrics.received
                           << ",\"released\":" << metrics.released << "}\n";
@@ -175,11 +211,22 @@ struct PipeWireCapture::Impl {
                 ++metrics.discarded;
             }
             latest = next;
+            acquired = arrival;
         }
+        dequeue_batch(metrics, batch);
         if (!latest)
             return;
-        const FrameLease lease(this, latest, [](void *owner, void *buffer) noexcept {
-            static_cast<Impl *>(owner)->release_buffer(static_cast<pw_buffer *>(buffer));
+        struct ReleaseContext {
+            Impl *capture;
+            std::chrono::steady_clock::time_point acquired;
+        } release{this, acquired};
+        const FrameLease lease(&release, latest, [](void *owner, void *buffer) noexcept {
+            const auto &context = *static_cast<ReleaseContext *>(owner);
+            context.capture->release_buffer(static_cast<pw_buffer *>(buffer));
+            if (auto *samples = context.capture->timing(CaptureTimingStage::Held))
+                samples->observe(std::chrono::duration<double, std::milli>(
+                                     std::chrono::steady_clock::now() - context.acquired)
+                                     .count());
         });
         if (!consumer || failure || !metrics.drm_format) {
             ++metrics.discarded;
@@ -237,6 +284,27 @@ struct PipeWireCapture::Impl {
         frame.modifier = format.modifier;
         frame.plane_count = buffer->n_datas;
         frame.storage = options.cpu_capture ? FrameStorage::CpuMemory : FrameStorage::DmaBuf;
+        const auto *header = static_cast<spa_meta_header *>(
+            spa_buffer_find_meta_data(buffer, SPA_META_Header, sizeof(spa_meta_header)));
+        if (header) {
+            if (header->flags & SPA_META_HEADER_FLAG_CORRUPTED) {
+                ++metrics.discarded;
+                return;
+            }
+            const bool discontinuity = (header->flags & SPA_META_HEADER_FLAG_DISCONT) != 0;
+            if (last_sequence && !discontinuity && header->seq > *last_sequence)
+                metrics.sequence_gaps += header->seq - *last_sequence - 1;
+            last_sequence = header->seq;
+            frame.timestamp_ns = header->pts;
+            const auto intervals = metrics.presentation_intervals;
+            const auto interval_sum = metrics.presentation_interval_sum_ms;
+            presentation_timing.observe(metrics, header->pts, arrival_ns, discontinuity);
+            if (auto *samples = timing(CaptureTimingStage::Producer);
+                samples && metrics.presentation_intervals > intervals)
+                samples->observe(metrics.presentation_interval_sum_ms - interval_sum);
+        } else {
+            presentation_timing = {};
+        }
         if (options.cpu_capture && buffer->n_datas != 1) {
             fail(FrameCaptureFailure::UnsupportedFormat, "pipewire.cpu_multiplane_not_supported");
             return;
@@ -287,7 +355,11 @@ struct PipeWireCapture::Impl {
                 continue;
             }
             pollfd fence{static_cast<int>(plane.fd), POLLIN, 0};
-            const auto wait = ::poll(&fence, 1, 1000);
+            int wait;
+            {
+                const CaptureStageTimer fence_timer(timing(CaptureTimingStage::Fence));
+                wait = ::poll(&fence, 1, 1000);
+            }
             if (wait <= 0 || !(fence.revents & POLLIN) || (fence.revents & (POLLERR | POLLNVAL))) {
                 metrics.native_error = wait < 0 ? errno : 0;
                 fail(wait == 0 ? FrameCaptureFailure::Timeout : FrameCaptureFailure::GpuImport,
@@ -297,30 +369,14 @@ struct PipeWireCapture::Impl {
         }
         metrics.buffer.implicit_fences_ready = !options.cpu_capture;
         frame.diagnostics = metrics.buffer;
-        const auto *header = static_cast<spa_meta_header *>(
-            spa_buffer_find_meta_data(buffer, SPA_META_Header, sizeof(spa_meta_header)));
-        if (header) {
-            if (header->flags & SPA_META_HEADER_FLAG_CORRUPTED) {
-                ++metrics.discarded;
-                return;
-            }
-            if (last_sequence && !(header->flags & SPA_META_HEADER_FLAG_DISCONT) &&
-                header->seq > *last_sequence)
-                metrics.sequence_gaps += header->seq - *last_sequence - 1;
-            last_sequence = header->seq;
-            frame.timestamp_ns = header->pts;
-            timespec now{};
-            clock_gettime(CLOCK_MONOTONIC, &now);
-            const auto current = static_cast<std::int64_t>(now.tv_sec) * 1000000000LL + now.tv_nsec;
-            presentation_timing.observe(metrics, header->pts, current,
-                                        (header->flags & SPA_META_HEADER_FLAG_DISCONT) != 0);
-        } else
-            presentation_timing = {};
         if (options.cpu_capture) {
             ++metrics.cpu_frames;
             state = FrameCaptureState::Delivering;
             try {
-                (*consumer)(frame);
+                {
+                    const CaptureStageTimer timer(timing(CaptureTimingStage::Consumer));
+                    (*consumer)(frame);
+                }
                 ++metrics.delivered;
                 state = FrameCaptureState::Capturing;
             } catch (...) {
@@ -333,14 +389,18 @@ struct PipeWireCapture::Impl {
         const auto import_ms = std::chrono::duration<double, std::milli>(
                                    std::chrono::steady_clock::now() - import_start)
                                    .count();
+        if (auto *samples = timing(CaptureTimingStage::Import))
+            samples->observe(import_ms);
         if (image == EGL_NO_IMAGE_KHR) {
             metrics.native_error = eglGetError();
             ++metrics.discarded;
             fail(FrameCaptureFailure::GpuImport, "egl.import_dmabuf");
             return;
         }
-        const FrameLease image_lease(gpu.get(), image, [](void *owner, void *image) noexcept {
-            static_cast<GpuImporter *>(owner)->release(static_cast<EGLImageKHR>(image));
+        const FrameLease image_lease(this, image, [](void *owner, void *image) noexcept {
+            auto &capture = *static_cast<Impl *>(owner);
+            const CaptureStageTimer timer(capture.timing(CaptureTimingStage::Cleanup));
+            capture.gpu->release(static_cast<EGLImageKHR>(image));
         });
         ++metrics.gpu_imports;
         metrics.gpu_import_time_sum_ms += import_ms;
@@ -350,7 +410,10 @@ struct PipeWireCapture::Impl {
         frame.diagnostics = metrics.buffer;
         state = FrameCaptureState::Delivering;
         try {
-            (*consumer)(frame);
+            {
+                const CaptureStageTimer timer(timing(CaptureTimingStage::Consumer));
+                (*consumer)(frame);
+            }
             ++metrics.delivered;
             state = FrameCaptureState::Capturing;
         } catch (...) {
@@ -375,19 +438,38 @@ void PipeWireCapture::start(const CaptureOptions &options) {
         throw std::logic_error("Capture must be stopped before starting");
     if (options.width != 1920 || options.height != 1080 || options.fps != 60)
         throw std::invalid_argument("Initial capture target is 1920x1080 at 60 FPS");
+    if (options.buffer_pool_size < 2 || options.buffer_pool_size > 8)
+        throw std::invalid_argument("Capture buffer pool must be 2..8");
+    if (options.diagnostic_max_fps < 60 || options.diagnostic_max_fps > 65 ||
+        (options.fixed_rate && options.diagnostic_max_fps != 60))
+        throw std::invalid_argument("Diagnostic maximum must be 60..65 with range negotiation");
+    if (options.source != CaptureSource::Any && options.source != CaptureSource::Monitor &&
+        options.source != CaptureSource::Window)
+        throw std::invalid_argument("Invalid capture source");
     self.options = options;
     self.metrics = {};
     self.failure.reset();
     self.failure_stage = "pipewire.capture";
     self.last_sequence.reset();
     self.presentation_timing = {};
+    self.timings = {};
+    self.last_arrival.reset();
+    self.last_poll.reset();
+    if (options.timing_diagnostics)
+        for (std::size_t i = 0; i < self.timings.size(); ++i) {
+            self.timings[i] = TimingSamples(
+                i == static_cast<std::size_t>(CaptureTimingStage::Poll) ? 131072 : 8192);
+            self.timings[i].prepare();
+        }
     self.consumer_error = {};
     self.state = FrameCaptureState::Starting;
     try {
         static std::once_flag initialized;
         std::call_once(initialized, [] { pw_init(nullptr, nullptr); });
         self.portal = std::make_unique<PortalSession>();
-        int fd = self.portal->open(options.embedded_cursor);
+        int fd = self.portal->open(options.embedded_cursor, options.source);
+        self.metrics.source_type = self.portal->source_type();
+        self.metrics.source_node = self.portal->node();
         // Consume the fd only after the PipeWire context exists.
         self.loop = pw_main_loop_new(nullptr);
         if (self.loop)
@@ -402,10 +484,16 @@ void PipeWireCapture::start(const CaptureOptions &options) {
         static const pw_core_events core_events = [] {
             pw_core_events events{};
             events.version = PW_VERSION_CORE_EVENTS;
-            events.error = [](void *data, std::uint32_t, int, int result, const char *) {
+            events.error = [](void *data, std::uint32_t id, int sequence, int result,
+                              const char *message) {
                 auto &capture = *static_cast<Impl *>(data);
+                if (capture.failure)
+                    return;
                 capture.metrics.native_error = result;
-                capture.fail(FrameCaptureFailure::PipeWire);
+                capture.metrics.error_object = id;
+                capture.metrics.error_sequence = sequence;
+                capture.error_message(message);
+                capture.fail(FrameCaptureFailure::PipeWire, "pipewire.core_error");
             };
             return events;
         }();
@@ -423,14 +511,29 @@ void PipeWireCapture::start(const CaptureOptions &options) {
             pw_stream_events value{};
             value.version = PW_VERSION_STREAM_EVENTS;
             value.state_changed = [](void *data, pw_stream_state, pw_stream_state state,
-                                     const char *) {
+                                     const char *message) {
                 auto &capture = *static_cast<Impl *>(data);
-                if (state == PW_STREAM_STATE_ERROR || state == PW_STREAM_STATE_UNCONNECTED)
-                    capture.fail(FrameCaptureFailure::PipeWire);
+                if (capture.failure)
+                    return;
+                capture.metrics.stream_state = static_cast<int>(state);
+                if (state == PW_STREAM_STATE_ERROR || state == PW_STREAM_STATE_UNCONNECTED) {
+                    capture.error_message(message);
+                    capture.fail(FrameCaptureFailure::PipeWire,
+                                 state == PW_STREAM_STATE_ERROR ? "pipewire.stream_error"
+                                                                : "pipewire.stream_disconnected");
+                }
             };
             value.param_changed = [](void *data, std::uint32_t id, const spa_pod *param) {
                 if (id == SPA_PARAM_Format)
                     static_cast<Impl *>(data)->update_format(param);
+            };
+            value.add_buffer = [](void *data, pw_buffer *) {
+                auto &metrics = static_cast<Impl *>(data)->metrics;
+                buffer_added(metrics);
+            };
+            value.remove_buffer = [](void *data, pw_buffer *) {
+                auto &metrics = static_cast<Impl *>(data)->metrics;
+                buffer_removed(metrics);
             };
             value.process = [](void *data) {
                 auto &capture = *static_cast<Impl *>(data);
@@ -448,7 +551,6 @@ void PipeWireCapture::start(const CaptureOptions &options) {
         std::vector<const spa_pod *> params;
         const spa_rectangle size{options.width, options.height};
         const spa_fraction rate{options.fps, 1};
-        const spa_fraction minimum_rate{0, 1};
         for (const auto &entry : formats) {
             const auto modifiers =
                 options.cpu_capture ? std::vector<std::uint64_t>{} : self.gpu->modifiers(entry.drm);
@@ -461,10 +563,8 @@ void PipeWireCapture::start(const CaptureOptions &options) {
             spa_pod_builder_add(&builder, SPA_FORMAT_mediaType, SPA_POD_Id(SPA_MEDIA_TYPE_video),
                                 SPA_FORMAT_mediaSubtype, SPA_POD_Id(SPA_MEDIA_SUBTYPE_raw),
                                 SPA_FORMAT_VIDEO_format, SPA_POD_Id(entry.spa),
-                                SPA_FORMAT_VIDEO_size, SPA_POD_Rectangle(&size),
-                                SPA_FORMAT_VIDEO_framerate,
-                                SPA_POD_CHOICE_RANGE_Fraction(&rate, &minimum_rate, &rate),
-                                SPA_FORMAT_VIDEO_maxFramerate, SPA_POD_Fraction(&rate), 0);
+                                SPA_FORMAT_VIDEO_size, SPA_POD_Rectangle(&size), 0);
+            add_video_rate(builder, rate, options.fixed_rate, options.diagnostic_max_fps);
             if (!options.cpu_capture) {
                 spa_pod_builder_prop(&builder, SPA_FORMAT_VIDEO_modifier,
                                      SPA_POD_PROP_FLAG_MANDATORY | SPA_POD_PROP_FLAG_DONT_FIXATE);
@@ -503,10 +603,15 @@ bool PipeWireCapture::poll(const Consumer &consume) {
     if (self.state != FrameCaptureState::Starting && self.state != FrameCaptureState::Capturing)
         throw std::logic_error("Capture is not running");
     const auto before = self.metrics.delivered;
+    const auto polled = std::chrono::steady_clock::now();
+    if (auto *samples = self.timing(CaptureTimingStage::Poll); samples && self.last_poll)
+        samples->observe(
+            std::chrono::duration<double, std::milli>(polled - *self.last_poll).count());
+    self.last_poll = polled;
     self.consumer = &consume;
     self.portal->pump();
     if (self.portal->closed())
-        self.fail(FrameCaptureFailure::PermissionDenied);
+        self.fail(FrameCaptureFailure::PermissionDenied, "portal.session_closed");
     if (!self.failure && pw_loop_iterate(pw_main_loop_get_loop(self.loop), 0) < 0)
         self.fail(FrameCaptureFailure::PipeWire);
     self.consumer = nullptr;
@@ -537,5 +642,12 @@ FrameCaptureState PipeWireCapture::state() const {
 FrameCaptureMetrics PipeWireCapture::metrics() const {
     impl_->check();
     return impl_->metrics;
+}
+std::array<TimingSummary, 9> PipeWireCapture::timing_summary() const {
+    impl_->check();
+    std::array<TimingSummary, 9> result;
+    for (std::size_t i = 0; i < result.size(); ++i)
+        result[i] = impl_->timings[i].summary();
+    return result;
 }
 } // namespace cloudplay::capture

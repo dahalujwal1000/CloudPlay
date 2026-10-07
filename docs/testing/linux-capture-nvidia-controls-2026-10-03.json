@@ -1,0 +1,1544 @@
+{
+  "sourceBefore": {
+    "pid": 14568,
+    "alive": true,
+    "openDrmDevices": [],
+    "gpuDeviceNodes": [
+      "/dev/dri/renderD129",
+      "/dev/nvidia-modeset",
+      "/dev/nvidia0",
+      "/dev/nvidiactl"
+    ],
+    "rendererBackend": "opengl",
+    "gpuIdentityVerified": false,
+    "presentedFeedback": 0,
+    "distinctPresentationTimestamps": 0,
+    "presentationSpanSeconds": 0,
+    "presentationFps": null,
+    "discardedPresentationFeedback": 0,
+    "ffplayDroppedFrames": 6,
+    "invalidPresentationFeedback": 0,
+    "presentationVerified": false,
+    "distinctFrameContentVerified": false
+  },
+  "runs": {
+    "baseline-gpu": {
+      "summary": {
+        "event": "capture.summary",
+        "stable1080p60Gpu": false,
+        "fps": 38.8321,
+        "cpuCapture": false,
+        "elapsedSeconds": 30.0009,
+        "fixedRateRequested": false,
+        "actualSourceType": 1,
+        "nodeId": 70,
+        "diagnosticCpuCopies": 0,
+        "minimumIntervalFps": 36.9702,
+        "received": 1165,
+        "delivered": 1165,
+        "released": 1165,
+        "discarded": 0,
+        "sequenceGaps": 0,
+        "width": 1920,
+        "height": 1080,
+        "drmFourcc": 875713112,
+        "modifier": 0,
+        "gpuImports": 1165,
+        "requestedBufferPoolSize": 4,
+        "bufferPoolSize": 4,
+        "maxBufferPoolSize": 4,
+        "requestedMinBufferPoolSize": 2,
+        "requestedMaxBufferPoolSize": 8,
+        "dequeueBatches": 1165,
+        "multiDequeueBatches": 0,
+        "maxDequeueBatch": 1,
+        "outstandingBuffers": 0,
+        "maxOutstandingBuffers": 1,
+        "cpuFrames": 0,
+        "cpuCopies": 0,
+        "gpuCopies": 0,
+        "latencySamples": 0,
+        "meanNonnegativePresentationAgeMs": null,
+        "maxNonnegativePresentationAgeMs": 0,
+        "presentationAgeSamples": 1165,
+        "futureTimestamps": 1165,
+        "minimumPresentationAgeMs": -14.3562,
+        "meanPresentationAgeMs": -6.50269,
+        "presentationIntervals": 1164,
+        "meanPresentationIntervalMs": 25.7574,
+        "maxPresentationIntervalMs": 49.992,
+        "negotiatedFps": 0,
+        "negotiatedMaxFps": 60,
+        "meanGpuImportMs": 0.277616,
+        "maxGpuImportMs": 6.30684,
+        "captureOriginLatencyVerified": false,
+        "internalDriverCopies": null,
+        "nvencInteropVerified": false
+      },
+      "timings": {
+        "arrivalInterval": {
+          "count": 1164,
+          "overflow": 0,
+          "mean": 25.7566,
+          "min": 15.0152,
+          "max": 46.4501,
+          "p50": 32.6956,
+          "p95": 33.9164,
+          "p99": 34.2826,
+          "histogram": [
+            0,
+            0,
+            528,
+            3,
+            628,
+            5,
+            0
+          ]
+        },
+        "producerInterval": {
+          "count": 1164,
+          "overflow": 0,
+          "mean": 25.7574,
+          "min": 16.666,
+          "max": 49.992,
+          "p50": 33.321,
+          "p95": 33.335,
+          "p99": 33.34,
+          "histogram": [
+            0,
+            0,
+            531,
+            0,
+            631,
+            2,
+            0
+          ]
+        },
+        "fenceWait": {
+          "count": 1165,
+          "overflow": 0,
+          "mean": 4.65651,
+          "min": 3.95316,
+          "max": 10.9057,
+          "p50": 4.60249,
+          "p95": 5.23135,
+          "p99": 5.97915,
+          "histogram": [
+            1161,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "eglImport": {
+          "count": 1165,
+          "overflow": 0,
+          "mean": 0.277616,
+          "min": 0.162975,
+          "max": 6.30684,
+          "p50": 0.243232,
+          "p95": 0.337814,
+          "p99": 0.62457,
+          "histogram": [
+            1165,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consumerCallback": {
+          "count": 1165,
+          "overflow": 0,
+          "mean": 0.00074167,
+          "min": 0.000295,
+          "max": 0.028992,
+          "p50": 0.000671,
+          "p95": 0.00109,
+          "p99": 0.001717,
+          "histogram": [
+            1165,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "eglCleanup": {
+          "count": 1165,
+          "overflow": 0,
+          "mean": 0.0195885,
+          "min": 0.012126,
+          "max": 0.16708,
+          "p50": 0.017963,
+          "p95": 0.02629,
+          "p99": 0.038233,
+          "histogram": [
+            1165,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "bufferRequeue": {
+          "count": 1165,
+          "overflow": 0,
+          "mean": 0.00028896,
+          "min": 0.00007,
+          "max": 0.004974,
+          "p50": 0.000247,
+          "p95": 0.000562,
+          "p99": 0.000834,
+          "histogram": [
+            1165,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "bufferHeld": {
+          "count": 1165,
+          "overflow": 0,
+          "mean": 4.96353,
+          "min": 4.20724,
+          "max": 11.9644,
+          "p50": 4.88684,
+          "p95": 5.6177,
+          "p99": 7.33461,
+          "histogram": [
+            1156,
+            9,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "pollInterval": {
+          "count": 22271,
+          "overflow": 0,
+          "mean": 1.34822,
+          "min": 1.00768,
+          "max": 13.0528,
+          "p50": 1.07758,
+          "p95": 5.4776,
+          "p99": 6.33444,
+          "histogram": [
+            22256,
+            15,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "failure": null,
+      "format": {
+        "event": "capture.format",
+        "width": 1920,
+        "height": 1080,
+        "drmFourcc": 875713112,
+        "modifier": 0
+      },
+      "buffer": {
+        "event": "capture.buffer",
+        "spaFormat": 8,
+        "spaFormatName": "BGRx",
+        "requestedPath": "packed RGB capture; optional EGL import",
+        "explicitSyncPresent": false,
+        "implicitFencesReady": true,
+        "eglImageImported": true,
+        "planeCount": 1,
+        "planes": [
+          {
+            "memoryType": 3,
+            "memoryTypeName": "DmaBuf",
+            "dataFlags": 1,
+            "isDmaBuf": true,
+            "mapOffset": 0,
+            "chunkOffset": 0,
+            "effectiveOffset": 0,
+            "chunkSize": 8294400,
+            "maxSize": 8294400,
+            "stride": 7680
+          }
+        ],
+        "cropPresent": true,
+        "crop": [
+          0,
+          0,
+          1920,
+          1080
+        ],
+        "transformPresent": false,
+        "transform": 0
+      },
+      "requestedRate": {
+        "event": "capture.requested_rate",
+        "fixedRate": false,
+        "minimumFps": 0,
+        "maximumFps": 60,
+        "timingDiagnostics": true,
+        "cpuCapture": false,
+        "requestedBufferPoolSize": 4,
+        "requestedSourceTypes": 1
+      },
+      "intervals": [
+        {
+          "event": "capture.interval",
+          "fps": 36.9793,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 38,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 39.9848,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 78,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 38.9837,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 117,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 37.9757,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 155,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 39.9926,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 195,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 37.9792,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 233,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 37.9795,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 271,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 38.9861,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 310,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 40.9594,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 351,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 39.9965,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 391,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 36.976,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 428,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 39.9884,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 468,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 37.9794,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 506,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 39.9606,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 546,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 36.9971,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 583,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 39.9874,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 623,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 40.9991,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 664,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 36.9702,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 701,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 39.9754,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 741,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 38.9735,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 780,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 38.9752,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 819,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 37.9673,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 857,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 36.9966,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 894,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 37.9957,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 932,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 40.9988,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 973,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 37.9627,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 1011,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 38.9954,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 1050,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 38.9674,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 1089,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 38.9832,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 1128,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        }
+      ],
+      "exitCode": 3,
+      "source": {
+        "pid": 14568,
+        "alive": true,
+        "openDrmDevices": [],
+        "gpuDeviceNodes": [
+          "/dev/dri/renderD129",
+          "/dev/nvidia-modeset",
+          "/dev/nvidia0",
+          "/dev/nvidiactl"
+        ],
+        "rendererBackend": null,
+        "gpuIdentityVerified": false,
+        "presentedFeedback": 0,
+        "distinctPresentationTimestamps": 0,
+        "presentationSpanSeconds": 0,
+        "presentationFps": null,
+        "discardedPresentationFeedback": 0,
+        "ffplayDroppedFrames": 14,
+        "invalidPresentationFeedback": 0,
+        "presentationVerified": false,
+        "distinctFrameContentVerified": false,
+        "ffplayDropDelta": 8
+      },
+      "validControl": true,
+      "exclusionReason": null
+    },
+    "baseline-cpu": {
+      "summary": {
+        "event": "capture.summary",
+        "stable1080p60Gpu": false,
+        "fps": 37.2332,
+        "cpuCapture": true,
+        "elapsedSeconds": 30.0001,
+        "fixedRateRequested": false,
+        "actualSourceType": 1,
+        "nodeId": 70,
+        "diagnosticCpuCopies": 0,
+        "minimumIntervalFps": 32.9726,
+        "received": 1117,
+        "delivered": 1117,
+        "released": 1117,
+        "discarded": 0,
+        "sequenceGaps": 0,
+        "width": 1920,
+        "height": 1080,
+        "drmFourcc": 875713112,
+        "modifier": 0,
+        "gpuImports": 0,
+        "requestedBufferPoolSize": 4,
+        "bufferPoolSize": 4,
+        "maxBufferPoolSize": 4,
+        "requestedMinBufferPoolSize": 2,
+        "requestedMaxBufferPoolSize": 8,
+        "dequeueBatches": 1117,
+        "multiDequeueBatches": 0,
+        "maxDequeueBatch": 1,
+        "outstandingBuffers": 0,
+        "maxOutstandingBuffers": 1,
+        "cpuFrames": 1117,
+        "cpuCopies": 0,
+        "gpuCopies": 0,
+        "latencySamples": 1117,
+        "meanNonnegativePresentationAgeMs": 7.6401,
+        "maxNonnegativePresentationAgeMs": 14.5328,
+        "presentationAgeSamples": 1117,
+        "futureTimestamps": 0,
+        "minimumPresentationAgeMs": 6.72079,
+        "meanPresentationAgeMs": 7.6401,
+        "presentationIntervals": 1116,
+        "meanPresentationIntervalMs": 26.8816,
+        "maxPresentationIntervalMs": 34.015,
+        "negotiatedFps": 0,
+        "negotiatedMaxFps": 60,
+        "meanGpuImportMs": null,
+        "maxGpuImportMs": 0,
+        "captureOriginLatencyVerified": false,
+        "internalDriverCopies": null,
+        "nvencInteropVerified": false
+      },
+      "timings": {
+        "arrivalInterval": {
+          "count": 1116,
+          "overflow": 0,
+          "mean": 26.876,
+          "min": 15.1862,
+          "max": 35.9541,
+          "p50": 32.7564,
+          "p95": 34.0378,
+          "p99": 34.4737,
+          "histogram": [
+            0,
+            0,
+            428,
+            4,
+            682,
+            2,
+            0
+          ]
+        },
+        "producerInterval": {
+          "count": 1116,
+          "overflow": 0,
+          "mean": 26.8816,
+          "min": 16.666,
+          "max": 34.015,
+          "p50": 33.141,
+          "p95": 33.495,
+          "p99": 33.598,
+          "histogram": [
+            0,
+            0,
+            431,
+            1,
+            684,
+            0,
+            0
+          ]
+        },
+        "fenceWait": {
+          "count": 0,
+          "overflow": 0,
+          "mean": 0,
+          "min": 0,
+          "max": 0,
+          "p50": 0,
+          "p95": 0,
+          "p99": 0,
+          "histogram": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "eglImport": {
+          "count": 0,
+          "overflow": 0,
+          "mean": 0,
+          "min": 0,
+          "max": 0,
+          "p50": 0,
+          "p95": 0,
+          "p99": 0,
+          "histogram": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consumerCallback": {
+          "count": 1117,
+          "overflow": 0,
+          "mean": 0.000863307,
+          "min": 0.000282,
+          "max": 0.033828,
+          "p50": 0.000518,
+          "p95": 0.002722,
+          "p99": 0.003098,
+          "histogram": [
+            1117,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "eglCleanup": {
+          "count": 0,
+          "overflow": 0,
+          "mean": 0,
+          "min": 0,
+          "max": 0,
+          "p50": 0,
+          "p95": 0,
+          "p99": 0,
+          "histogram": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "bufferRequeue": {
+          "count": 1117,
+          "overflow": 0,
+          "mean": 0.000342644,
+          "min": 0.000044,
+          "max": 0.005437,
+          "p50": 0.000225,
+          "p95": 0.001171,
+          "p99": 0.001568,
+          "histogram": [
+            1117,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "bufferHeld": {
+          "count": 1117,
+          "overflow": 0,
+          "mean": 0.00759238,
+          "min": 0.002935,
+          "max": 0.067114,
+          "p50": 0.004571,
+          "p95": 0.024672,
+          "p99": 0.027083,
+          "histogram": [
+            1117,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "pollInterval": {
+          "count": 27564,
+          "overflow": 0,
+          "mean": 1.08994,
+          "min": 1.00544,
+          "max": 5.62855,
+          "p50": 1.0783,
+          "p95": 1.17642,
+          "p99": 1.36791,
+          "histogram": [
+            27564,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "failure": null,
+      "format": {
+        "event": "capture.format",
+        "width": 1920,
+        "height": 1080,
+        "drmFourcc": 875713112,
+        "modifier": 0
+      },
+      "buffer": {
+        "event": "capture.buffer",
+        "spaFormat": 8,
+        "spaFormatName": "BGRx",
+        "requestedPath": "packed RGB capture; optional EGL import",
+        "explicitSyncPresent": false,
+        "implicitFencesReady": false,
+        "eglImageImported": false,
+        "planeCount": 1,
+        "planes": [
+          {
+            "memoryType": 2,
+            "memoryTypeName": "MemFd",
+            "dataFlags": 9,
+            "isDmaBuf": false,
+            "mapOffset": 0,
+            "chunkOffset": 0,
+            "effectiveOffset": 0,
+            "chunkSize": 8294400,
+            "maxSize": 8294400,
+            "stride": 7680
+          }
+        ],
+        "cropPresent": true,
+        "crop": [
+          0,
+          0,
+          1920,
+          1080
+        ],
+        "transformPresent": false,
+        "transform": 0
+      },
+      "requestedRate": {
+        "event": "capture.requested_rate",
+        "fixedRate": false,
+        "minimumFps": 0,
+        "maximumFps": 60,
+        "timingDiagnostics": true,
+        "cpuCapture": true,
+        "requestedBufferPoolSize": 4,
+        "requestedSourceTypes": 1
+      },
+      "intervals": [
+        {
+          "event": "capture.interval",
+          "fps": 36.9868,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 38,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 38.9921,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 77,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 36.996,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 114,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 37.9984,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 152,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 34.9842,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 187,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 40.9924,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 228,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 37.962,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 266,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 36.9707,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 303,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 38.9867,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 342,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 38.999,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 381,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 37.9597,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 419,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 38.9963,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 458,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 39.9658,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 498,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 32.9726,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 531,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 36.9653,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 568,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 35.997,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 604,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 37.9643,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 642,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 36.9649,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 679,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 36.9613,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 716,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 36.9563,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 753,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 34.9916,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 788,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 35.9813,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 824,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 37.9843,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 862,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 35.9645,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 898,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 39.9908,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 938,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 34.987,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 973,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 33.993,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 1007,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 37.9805,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 1045,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 33.9664,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 1079,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        }
+      ],
+      "exitCode": 3,
+      "source": {
+        "pid": 14568,
+        "alive": true,
+        "openDrmDevices": [],
+        "gpuDeviceNodes": [
+          "/dev/dri/renderD129",
+          "/dev/nvidia-modeset",
+          "/dev/nvidia0",
+          "/dev/nvidiactl"
+        ],
+        "rendererBackend": null,
+        "gpuIdentityVerified": false,
+        "presentedFeedback": 0,
+        "distinctPresentationTimestamps": 0,
+        "presentationSpanSeconds": 0,
+        "presentationFps": null,
+        "discardedPresentationFeedback": 0,
+        "ffplayDroppedFrames": 19,
+        "invalidPresentationFeedback": 0,
+        "presentationVerified": false,
+        "distinctFrameContentVerified": false,
+        "ffplayDropDelta": 5
+      },
+      "validControl": true,
+      "exclusionReason": null
+    }
+  },
+  "requestedControl": "both",
+  "nvencReady": false,
+  "webRtcStatus": "pending",
+  "change": null,
+  "reason": "Baseline does not support a pool-size experiment; inspect source/compositor evidence.",
+  "sourceAfter": {
+    "pid": 14568,
+    "alive": true,
+    "openDrmDevices": [],
+    "gpuDeviceNodes": [
+      "/dev/dri/renderD129",
+      "/dev/nvidia-modeset",
+      "/dev/nvidia0",
+      "/dev/nvidiactl"
+    ],
+    "rendererBackend": "opengl",
+    "gpuIdentityVerified": false,
+    "presentedFeedback": 0,
+    "distinctPresentationTimestamps": 0,
+    "presentationSpanSeconds": 0,
+    "presentationFps": null,
+    "discardedPresentationFeedback": 0,
+    "ffplayDroppedFrames": 19,
+    "invalidPresentationFeedback": 0,
+    "presentationVerified": false,
+    "distinctFrameContentVerified": false
+  },
+  "date": "2026-10-03",
+  "sourceRendererEvidence": {
+    "pid": 14568,
+    "gpuIndex": 0,
+    "processType": "G",
+    "smPercent": [
+      48,
+      48
+    ],
+    "memoryPercent": [
+      7,
+      7
+    ],
+    "method": "nvidia-smi pmon -c 2 before capture"
+  },
+  "cpuNodeSnapshot": {
+    "nodeId": 70,
+    "state": "running",
+    "properties": {
+      "media.class": "Stream/Output/Video",
+      "node.driver": true,
+      "node.name": "gnome-shell",
+      "node.want-driver": true,
+      "object.serial": 105
+    },
+    "parameters": {
+      "EnumFormat": [
+        {
+          "mediaType": "video",
+          "mediaSubtype": "raw",
+          "format": "BGRx",
+          "modifier": {
+            "default": 0,
+            "alt1": 0,
+            "alt2": 72057594037927940,
+            "alt3": 72057594037927940,
+            "alt4": 72057594037927940
+          },
+          "framerate": {
+            "num": 0,
+            "denom": 1
+          },
+          "maxFramerate": {
+            "default": {
+              "num": 15729567,
+              "denom": 262144
+            },
+            "min": {
+              "num": 1,
+              "denom": 1
+            },
+            "max": {
+              "num": 15729567,
+              "denom": 262144
+            }
+          },
+          "size": {
+            "default": {
+              "width": 1920,
+              "height": 1080
+            },
+            "min": {
+              "width": 1920,
+              "height": 1080
+            },
+            "max": {
+              "width": 1920,
+              "height": 1080
+            }
+          },
+          "colorPrimaries": "bt709",
+          "transferFunction": "gamma22"
+        },
+        {
+          "mediaType": "video",
+          "mediaSubtype": "raw",
+          "format": "BGRA",
+          "modifier": {
+            "default": 0,
+            "alt1": 0,
+            "alt2": 72057594037927940,
+            "alt3": 72057594037927940,
+            "alt4": 72057594037927940
+          },
+          "framerate": {
+            "num": 0,
+            "denom": 1
+          },
+          "maxFramerate": {
+            "default": {
+              "num": 15729567,
+              "denom": 262144
+            },
+            "min": {
+              "num": 1,
+              "denom": 1
+            },
+            "max": {
+              "num": 15729567,
+              "denom": 262144
+            }
+          },
+          "size": {
+            "default": {
+              "width": 1920,
+              "height": 1080
+            },
+            "min": {
+              "width": 1920,
+              "height": 1080
+            },
+            "max": {
+              "width": 1920,
+              "height": 1080
+            }
+          },
+          "colorPrimaries": "bt709",
+          "transferFunction": "gamma22"
+        },
+        {
+          "mediaType": "video",
+          "mediaSubtype": "raw",
+          "format": "BGRx",
+          "framerate": {
+            "num": 0,
+            "denom": 1
+          },
+          "maxFramerate": {
+            "default": {
+              "num": 15729567,
+              "denom": 262144
+            },
+            "min": {
+              "num": 1,
+              "denom": 1
+            },
+            "max": {
+              "num": 15729567,
+              "denom": 262144
+            }
+          },
+          "size": {
+            "default": {
+              "width": 1920,
+              "height": 1080
+            },
+            "min": {
+              "width": 1920,
+              "height": 1080
+            },
+            "max": {
+              "width": 1920,
+              "height": 1080
+            }
+          },
+          "colorPrimaries": "bt709",
+          "transferFunction": "gamma22"
+        },
+        {
+          "mediaType": "video",
+          "mediaSubtype": "raw",
+          "format": "BGRA",
+          "framerate": {
+            "num": 0,
+            "denom": 1
+          },
+          "maxFramerate": {
+            "default": {
+              "num": 15729567,
+              "denom": 262144
+            },
+            "min": {
+              "num": 1,
+              "denom": 1
+            },
+            "max": {
+              "num": 15729567,
+              "denom": 262144
+            }
+          },
+          "size": {
+            "default": {
+              "width": 1920,
+              "height": 1080
+            },
+            "min": {
+              "width": 1920,
+              "height": 1080
+            },
+            "max": {
+              "width": 1920,
+              "height": 1080
+            }
+          },
+          "colorPrimaries": "bt709",
+          "transferFunction": "gamma22"
+        }
+      ],
+      "Format": [
+        {
+          "mediaType": "video",
+          "mediaSubtype": "raw",
+          "format": "BGRx",
+          "framerate": {
+            "num": 0,
+            "denom": 1
+          },
+          "maxFramerate": {
+            "num": 60,
+            "denom": 1
+          },
+          "size": {
+            "width": 1920,
+            "height": 1080
+          },
+          "colorPrimaries": "bt709",
+          "transferFunction": "gamma22"
+        }
+      ],
+      "Latency": [
+        {
+          "direction": "Input",
+          "minQuantum": 0,
+          "maxQuantum": 0,
+          "minRate": 0,
+          "maxRate": 0,
+          "minNs": 0,
+          "maxNs": 0
+        }
+      ],
+      "ProcessLatency": []
+    },
+    "parameterLimit": 32,
+    "truncatedParameters": [],
+    "clockQuantumVerified": false
+  },
+  "rawReport": "/tmp/cloudplay-isolation-nvidia-20261003/report.json",
+  "sourceLog": "/tmp/cloudplay-nvidia-controls-20261003.log",
+  "sourcePresentationVerified": false,
+  "pixelCorrectVerified": false,
+  "nodeSnapshotDuringCpuCapture": true
+}

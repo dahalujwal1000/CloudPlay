@@ -1,0 +1,1610 @@
+{
+  "sourceTarget": "monitor",
+  "sourceBefore": {
+    "pid": 14900,
+    "alive": true,
+    "openDrmDevices": [],
+    "gpuDeviceNodes": [
+      "/dev/dri/renderD129",
+      "/dev/nvidia0",
+      "/dev/nvidiactl"
+    ],
+    "rendererBackend": null,
+    "gpuIdentityVerified": false,
+    "presentedFeedback": 0,
+    "distinctPresentationTimestamps": 0,
+    "presentationSpanSeconds": 0,
+    "presentationFps": null,
+    "discardedPresentationFeedback": 0,
+    "ffplayDroppedFrames": null,
+    "invalidPresentationFeedback": 0,
+    "presentationVerified": false,
+    "distinctFrameContentVerified": false
+  },
+  "runs": {
+    "baseline-cpu": {
+      "summary": {
+        "event": "capture.summary",
+        "stable1080p60Gpu": false,
+        "fps": 0.166661,
+        "cpuCapture": true,
+        "elapsedSeconds": 30.001,
+        "fixedRateRequested": false,
+        "actualSourceType": 1,
+        "nodeId": 78,
+        "diagnosticCpuCopies": 0,
+        "minimumIntervalFps": 0,
+        "received": 5,
+        "delivered": 5,
+        "released": 5,
+        "discarded": 0,
+        "sequenceGaps": 0,
+        "width": 1920,
+        "height": 1080,
+        "drmFourcc": 875713112,
+        "modifier": 0,
+        "gpuImports": 0,
+        "requestedBufferPoolSize": 4,
+        "bufferPoolSize": 4,
+        "maxBufferPoolSize": 4,
+        "requestedMinBufferPoolSize": 2,
+        "requestedMaxBufferPoolSize": 8,
+        "dequeueBatches": 5,
+        "multiDequeueBatches": 0,
+        "maxDequeueBatch": 1,
+        "outstandingBuffers": 0,
+        "maxOutstandingBuffers": 1,
+        "cpuFrames": 5,
+        "cpuCopies": 0,
+        "gpuCopies": 0,
+        "latencySamples": 5,
+        "meanNonnegativePresentationAgeMs": 10.5285,
+        "maxNonnegativePresentationAgeMs": 11.2322,
+        "presentationAgeSamples": 5,
+        "futureTimestamps": 0,
+        "minimumPresentationAgeMs": 8.79665,
+        "meanPresentationAgeMs": 10.5285,
+        "presentationIntervals": 4,
+        "meanPresentationIntervalMs": 16.6938,
+        "maxPresentationIntervalMs": 16.712,
+        "negotiatedFps": 0,
+        "negotiatedMaxFps": 60,
+        "meanGpuImportMs": null,
+        "maxGpuImportMs": 0,
+        "captureOriginLatencyVerified": false,
+        "internalDriverCopies": null,
+        "nvencInteropVerified": false
+      },
+      "timings": {
+        "arrivalInterval": {
+          "count": 4,
+          "overflow": 0,
+          "mean": 16.0854,
+          "min": 14.9663,
+          "max": 17.0776,
+          "p50": 15.991,
+          "p95": 17.0776,
+          "p99": 17.0776,
+          "histogram": [
+            0,
+            1,
+            3,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "producerInterval": {
+          "count": 4,
+          "overflow": 0,
+          "mean": 16.6938,
+          "min": 16.676,
+          "max": 16.712,
+          "p50": 16.693,
+          "p95": 16.712,
+          "p99": 16.712,
+          "histogram": [
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "fenceWait": {
+          "count": 0,
+          "overflow": 0,
+          "mean": 0,
+          "min": 0,
+          "max": 0,
+          "p50": 0,
+          "p95": 0,
+          "p99": 0,
+          "histogram": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "eglImport": {
+          "count": 0,
+          "overflow": 0,
+          "mean": 0,
+          "min": 0,
+          "max": 0,
+          "p50": 0,
+          "p95": 0,
+          "p99": 0,
+          "histogram": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "consumerCallback": {
+          "count": 5,
+          "overflow": 0,
+          "mean": 0.01785,
+          "min": 0.000358,
+          "max": 0.087116,
+          "p50": 0.000566,
+          "p95": 0.087116,
+          "p99": 0.087116,
+          "histogram": [
+            5,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "eglCleanup": {
+          "count": 0,
+          "overflow": 0,
+          "mean": 0,
+          "min": 0,
+          "max": 0,
+          "p50": 0,
+          "p95": 0,
+          "p99": 0,
+          "histogram": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "bufferRequeue": {
+          "count": 5,
+          "overflow": 0,
+          "mean": 0.0002756,
+          "min": 0.000053,
+          "max": 0.000835,
+          "p50": 0.00018,
+          "p95": 0.000835,
+          "p99": 0.000835,
+          "histogram": [
+            5,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "bufferHeld": {
+          "count": 5,
+          "overflow": 0,
+          "mean": 0.025766,
+          "min": 0.004005,
+          "max": 0.09296,
+          "p50": 0.006749,
+          "p95": 0.09296,
+          "p99": 0.09296,
+          "histogram": [
+            5,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "pollInterval": {
+          "count": 27921,
+          "overflow": 0,
+          "mean": 1.07543,
+          "min": 1.00577,
+          "max": 3.25552,
+          "p50": 1.07521,
+          "p95": 1.1036,
+          "p99": 1.15692,
+          "histogram": [
+            27921,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "failure": null,
+      "format": {
+        "event": "capture.format",
+        "width": 1920,
+        "height": 1080,
+        "drmFourcc": 875713112,
+        "modifier": 0
+      },
+      "buffer": {
+        "event": "capture.buffer",
+        "spaFormat": 8,
+        "spaFormatName": "BGRx",
+        "requestedPath": "packed RGB capture; optional EGL import",
+        "explicitSyncPresent": false,
+        "implicitFencesReady": false,
+        "eglImageImported": false,
+        "planeCount": 1,
+        "planes": [
+          {
+            "memoryType": 2,
+            "memoryTypeName": "MemFd",
+            "dataFlags": 9,
+            "isDmaBuf": false,
+            "mapOffset": 0,
+            "chunkOffset": 0,
+            "effectiveOffset": 0,
+            "chunkSize": 8294400,
+            "maxSize": 8294400,
+            "stride": 7680
+          }
+        ],
+        "cropPresent": true,
+        "crop": [
+          0,
+          0,
+          1920,
+          1080
+        ],
+        "transformPresent": false,
+        "transform": 0
+      },
+      "requestedRate": {
+        "event": "capture.requested_rate",
+        "fixedRate": false,
+        "minimumFps": 0,
+        "maximumFps": 60,
+        "timingDiagnostics": true,
+        "cpuCapture": true,
+        "requestedBufferPoolSize": 4,
+        "requestedSourceTypes": 1
+      },
+      "intervals": [
+        {
+          "event": "capture.interval",
+          "fps": 3.99739,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        },
+        {
+          "event": "capture.interval",
+          "fps": 0,
+          "discarded": 0,
+          "bufferPoolSize": 4,
+          "outstandingBuffers": 0,
+          "maxOutstandingBuffers": 1,
+          "dequeueBatches": 5,
+          "maxDequeueBatch": 1,
+          "sequenceGaps": 0
+        }
+      ],
+      "exitCode": 3,
+      "source": {
+        "pid": 14900,
+        "alive": true,
+        "openDrmDevices": [],
+        "gpuDeviceNodes": [
+          "/dev/dri/renderD129",
+          "/dev/nvidia-modeset",
+          "/dev/nvidia0",
+          "/dev/nvidiactl"
+        ],
+        "rendererBackend": "NVIDIA GeForce RTX 3050 6GB Laptop GPU/PCIe/SSE2",
+        "gpuIdentityVerified": false,
+        "presentedFeedback": 3354,
+        "distinctPresentationTimestamps": 3354,
+        "presentationSpanSeconds": 55.980226,
+        "presentationFps": 59.8961497583093,
+        "discardedPresentationFeedback": 0,
+        "ffplayDroppedFrames": null,
+        "invalidPresentationFeedback": 0,
+        "presentationVerified": true,
+        "distinctFrameContentVerified": false,
+        "ffplayDropDelta": null
+      },
+      "nodeSnapshotStatus": {
+        "status": "saved",
+        "nodeId": 78
+      },
+      "nodeSnapshots": [
+        {
+          "scheduledSeconds": 0,
+          "observedSeconds": 5.110000529384706e-7,
+          "status": {
+            "status": "saved",
+            "nodeId": 78
+          },
+          "snapshot": {
+            "nodeId": 78,
+            "state": "running",
+            "properties": {
+              "media.class": "Stream/Output/Video",
+              "node.driver": true,
+              "node.name": "gnome-shell",
+              "node.want-driver": true,
+              "object.serial": 105
+            },
+            "parameters": {
+              "EnumFormat": [
+                {
+                  "mediaType": "video",
+                  "mediaSubtype": "raw",
+                  "format": "BGRx",
+                  "modifier": {
+                    "default": 0,
+                    "alt1": 0,
+                    "alt2": 72057594037927940,
+                    "alt3": 72057594037927940,
+                    "alt4": 72057594037927940
+                  },
+                  "framerate": {
+                    "num": 0,
+                    "denom": 1
+                  },
+                  "maxFramerate": {
+                    "default": {
+                      "num": 15729567,
+                      "denom": 262144
+                    },
+                    "min": {
+                      "num": 1,
+                      "denom": 1
+                    },
+                    "max": {
+                      "num": 15729567,
+                      "denom": 262144
+                    }
+                  },
+                  "size": {
+                    "default": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "min": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "max": {
+                      "width": 1920,
+                      "height": 1080
+                    }
+                  },
+                  "colorPrimaries": "bt709",
+                  "transferFunction": "gamma22"
+                },
+                {
+                  "mediaType": "video",
+                  "mediaSubtype": "raw",
+                  "format": "BGRA",
+                  "modifier": {
+                    "default": 0,
+                    "alt1": 0,
+                    "alt2": 72057594037927940,
+                    "alt3": 72057594037927940,
+                    "alt4": 72057594037927940
+                  },
+                  "framerate": {
+                    "num": 0,
+                    "denom": 1
+                  },
+                  "maxFramerate": {
+                    "default": {
+                      "num": 15729567,
+                      "denom": 262144
+                    },
+                    "min": {
+                      "num": 1,
+                      "denom": 1
+                    },
+                    "max": {
+                      "num": 15729567,
+                      "denom": 262144
+                    }
+                  },
+                  "size": {
+                    "default": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "min": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "max": {
+                      "width": 1920,
+                      "height": 1080
+                    }
+                  },
+                  "colorPrimaries": "bt709",
+                  "transferFunction": "gamma22"
+                },
+                {
+                  "mediaType": "video",
+                  "mediaSubtype": "raw",
+                  "format": "BGRx",
+                  "framerate": {
+                    "num": 0,
+                    "denom": 1
+                  },
+                  "maxFramerate": {
+                    "default": {
+                      "num": 15729567,
+                      "denom": 262144
+                    },
+                    "min": {
+                      "num": 1,
+                      "denom": 1
+                    },
+                    "max": {
+                      "num": 15729567,
+                      "denom": 262144
+                    }
+                  },
+                  "size": {
+                    "default": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "min": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "max": {
+                      "width": 1920,
+                      "height": 1080
+                    }
+                  },
+                  "colorPrimaries": "bt709",
+                  "transferFunction": "gamma22"
+                },
+                {
+                  "mediaType": "video",
+                  "mediaSubtype": "raw",
+                  "format": "BGRA",
+                  "framerate": {
+                    "num": 0,
+                    "denom": 1
+                  },
+                  "maxFramerate": {
+                    "default": {
+                      "num": 15729567,
+                      "denom": 262144
+                    },
+                    "min": {
+                      "num": 1,
+                      "denom": 1
+                    },
+                    "max": {
+                      "num": 15729567,
+                      "denom": 262144
+                    }
+                  },
+                  "size": {
+                    "default": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "min": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "max": {
+                      "width": 1920,
+                      "height": 1080
+                    }
+                  },
+                  "colorPrimaries": "bt709",
+                  "transferFunction": "gamma22"
+                }
+              ],
+              "Format": [
+                {
+                  "mediaType": "video",
+                  "mediaSubtype": "raw",
+                  "format": "BGRx",
+                  "framerate": {
+                    "num": 0,
+                    "denom": 1
+                  },
+                  "maxFramerate": {
+                    "num": 60,
+                    "denom": 1
+                  },
+                  "size": {
+                    "width": 1920,
+                    "height": 1080
+                  },
+                  "colorPrimaries": "bt709",
+                  "transferFunction": "gamma22"
+                }
+              ],
+              "Latency": [
+                {
+                  "direction": "Input",
+                  "minQuantum": 0,
+                  "maxQuantum": 0,
+                  "minRate": 0,
+                  "maxRate": 0,
+                  "minNs": 0,
+                  "maxNs": 0
+                }
+              ],
+              "ProcessLatency": []
+            },
+            "parameterLimit": 32,
+            "truncatedParameters": [],
+            "clockQuantumVerified": false
+          }
+        },
+        {
+          "scheduledSeconds": 10,
+          "observedSeconds": 10.073275979000073,
+          "status": {
+            "status": "saved",
+            "nodeId": 78
+          },
+          "snapshot": {
+            "nodeId": 78,
+            "state": "running",
+            "properties": {
+              "media.class": "Stream/Output/Video",
+              "node.driver": true,
+              "node.name": "gnome-shell",
+              "node.want-driver": true,
+              "object.serial": 105
+            },
+            "parameters": {
+              "EnumFormat": [
+                {
+                  "mediaType": "video",
+                  "mediaSubtype": "raw",
+                  "format": "BGRx",
+                  "modifier": {
+                    "default": 0,
+                    "alt1": 0,
+                    "alt2": 72057594037927940,
+                    "alt3": 72057594037927940,
+                    "alt4": 72057594037927940
+                  },
+                  "framerate": {
+                    "num": 0,
+                    "denom": 1
+                  },
+                  "maxFramerate": {
+                    "default": {
+                      "num": 15729567,
+                      "denom": 262144
+                    },
+                    "min": {
+                      "num": 1,
+                      "denom": 1
+                    },
+                    "max": {
+                      "num": 15729567,
+                      "denom": 262144
+                    }
+                  },
+                  "size": {
+                    "default": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "min": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "max": {
+                      "width": 1920,
+                      "height": 1080
+                    }
+                  },
+                  "colorPrimaries": "bt709",
+                  "transferFunction": "gamma22"
+                },
+                {
+                  "mediaType": "video",
+                  "mediaSubtype": "raw",
+                  "format": "BGRA",
+                  "modifier": {
+                    "default": 0,
+                    "alt1": 0,
+                    "alt2": 72057594037927940,
+                    "alt3": 72057594037927940,
+                    "alt4": 72057594037927940
+                  },
+                  "framerate": {
+                    "num": 0,
+                    "denom": 1
+                  },
+                  "maxFramerate": {
+                    "default": {
+                      "num": 15729567,
+                      "denom": 262144
+                    },
+                    "min": {
+                      "num": 1,
+                      "denom": 1
+                    },
+                    "max": {
+                      "num": 15729567,
+                      "denom": 262144
+                    }
+                  },
+                  "size": {
+                    "default": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "min": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "max": {
+                      "width": 1920,
+                      "height": 1080
+                    }
+                  },
+                  "colorPrimaries": "bt709",
+                  "transferFunction": "gamma22"
+                },
+                {
+                  "mediaType": "video",
+                  "mediaSubtype": "raw",
+                  "format": "BGRx",
+                  "framerate": {
+                    "num": 0,
+                    "denom": 1
+                  },
+                  "maxFramerate": {
+                    "default": {
+                      "num": 15729567,
+                      "denom": 262144
+                    },
+                    "min": {
+                      "num": 1,
+                      "denom": 1
+                    },
+                    "max": {
+                      "num": 15729567,
+                      "denom": 262144
+                    }
+                  },
+                  "size": {
+                    "default": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "min": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "max": {
+                      "width": 1920,
+                      "height": 1080
+                    }
+                  },
+                  "colorPrimaries": "bt709",
+                  "transferFunction": "gamma22"
+                },
+                {
+                  "mediaType": "video",
+                  "mediaSubtype": "raw",
+                  "format": "BGRA",
+                  "framerate": {
+                    "num": 0,
+                    "denom": 1
+                  },
+                  "maxFramerate": {
+                    "default": {
+                      "num": 15729567,
+                      "denom": 262144
+                    },
+                    "min": {
+                      "num": 1,
+                      "denom": 1
+                    },
+                    "max": {
+                      "num": 15729567,
+                      "denom": 262144
+                    }
+                  },
+                  "size": {
+                    "default": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "min": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "max": {
+                      "width": 1920,
+                      "height": 1080
+                    }
+                  },
+                  "colorPrimaries": "bt709",
+                  "transferFunction": "gamma22"
+                }
+              ],
+              "Format": [
+                {
+                  "mediaType": "video",
+                  "mediaSubtype": "raw",
+                  "format": "BGRx",
+                  "framerate": {
+                    "num": 0,
+                    "denom": 1
+                  },
+                  "maxFramerate": {
+                    "num": 60,
+                    "denom": 1
+                  },
+                  "size": {
+                    "width": 1920,
+                    "height": 1080
+                  },
+                  "colorPrimaries": "bt709",
+                  "transferFunction": "gamma22"
+                }
+              ],
+              "Latency": [
+                {
+                  "direction": "Input",
+                  "minQuantum": 0,
+                  "maxQuantum": 0,
+                  "minRate": 0,
+                  "maxRate": 0,
+                  "minNs": 0,
+                  "maxNs": 0
+                }
+              ],
+              "ProcessLatency": []
+            },
+            "parameterLimit": 32,
+            "truncatedParameters": [],
+            "clockQuantumVerified": false
+          }
+        },
+        {
+          "scheduledSeconds": 20,
+          "observedSeconds": 20.037161415000128,
+          "status": {
+            "status": "saved",
+            "nodeId": 78
+          },
+          "snapshot": {
+            "nodeId": 78,
+            "state": "running",
+            "properties": {
+              "media.class": "Stream/Output/Video",
+              "node.driver": true,
+              "node.name": "gnome-shell",
+              "node.want-driver": true,
+              "object.serial": 105
+            },
+            "parameters": {
+              "EnumFormat": [
+                {
+                  "mediaType": "video",
+                  "mediaSubtype": "raw",
+                  "format": "BGRx",
+                  "modifier": {
+                    "default": 0,
+                    "alt1": 0,
+                    "alt2": 72057594037927940,
+                    "alt3": 72057594037927940,
+                    "alt4": 72057594037927940
+                  },
+                  "framerate": {
+                    "num": 0,
+                    "denom": 1
+                  },
+                  "maxFramerate": {
+                    "default": {
+                      "num": 15729567,
+                      "denom": 262144
+                    },
+                    "min": {
+                      "num": 1,
+                      "denom": 1
+                    },
+                    "max": {
+                      "num": 15729567,
+                      "denom": 262144
+                    }
+                  },
+                  "size": {
+                    "default": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "min": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "max": {
+                      "width": 1920,
+                      "height": 1080
+                    }
+                  },
+                  "colorPrimaries": "bt709",
+                  "transferFunction": "gamma22"
+                },
+                {
+                  "mediaType": "video",
+                  "mediaSubtype": "raw",
+                  "format": "BGRA",
+                  "modifier": {
+                    "default": 0,
+                    "alt1": 0,
+                    "alt2": 72057594037927940,
+                    "alt3": 72057594037927940,
+                    "alt4": 72057594037927940
+                  },
+                  "framerate": {
+                    "num": 0,
+                    "denom": 1
+                  },
+                  "maxFramerate": {
+                    "default": {
+                      "num": 15729567,
+                      "denom": 262144
+                    },
+                    "min": {
+                      "num": 1,
+                      "denom": 1
+                    },
+                    "max": {
+                      "num": 15729567,
+                      "denom": 262144
+                    }
+                  },
+                  "size": {
+                    "default": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "min": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "max": {
+                      "width": 1920,
+                      "height": 1080
+                    }
+                  },
+                  "colorPrimaries": "bt709",
+                  "transferFunction": "gamma22"
+                },
+                {
+                  "mediaType": "video",
+                  "mediaSubtype": "raw",
+                  "format": "BGRx",
+                  "framerate": {
+                    "num": 0,
+                    "denom": 1
+                  },
+                  "maxFramerate": {
+                    "default": {
+                      "num": 15729567,
+                      "denom": 262144
+                    },
+                    "min": {
+                      "num": 1,
+                      "denom": 1
+                    },
+                    "max": {
+                      "num": 15729567,
+                      "denom": 262144
+                    }
+                  },
+                  "size": {
+                    "default": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "min": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "max": {
+                      "width": 1920,
+                      "height": 1080
+                    }
+                  },
+                  "colorPrimaries": "bt709",
+                  "transferFunction": "gamma22"
+                },
+                {
+                  "mediaType": "video",
+                  "mediaSubtype": "raw",
+                  "format": "BGRA",
+                  "framerate": {
+                    "num": 0,
+                    "denom": 1
+                  },
+                  "maxFramerate": {
+                    "default": {
+                      "num": 15729567,
+                      "denom": 262144
+                    },
+                    "min": {
+                      "num": 1,
+                      "denom": 1
+                    },
+                    "max": {
+                      "num": 15729567,
+                      "denom": 262144
+                    }
+                  },
+                  "size": {
+                    "default": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "min": {
+                      "width": 1920,
+                      "height": 1080
+                    },
+                    "max": {
+                      "width": 1920,
+                      "height": 1080
+                    }
+                  },
+                  "colorPrimaries": "bt709",
+                  "transferFunction": "gamma22"
+                }
+              ],
+              "Format": [
+                {
+                  "mediaType": "video",
+                  "mediaSubtype": "raw",
+                  "format": "BGRx",
+                  "framerate": {
+                    "num": 0,
+                    "denom": 1
+                  },
+                  "maxFramerate": {
+                    "num": 60,
+                    "denom": 1
+                  },
+                  "size": {
+                    "width": 1920,
+                    "height": 1080
+                  },
+                  "colorPrimaries": "bt709",
+                  "transferFunction": "gamma22"
+                }
+              ],
+              "Latency": [
+                {
+                  "direction": "Input",
+                  "minQuantum": 0,
+                  "maxQuantum": 0,
+                  "minRate": 0,
+                  "maxRate": 0,
+                  "minNs": 0,
+                  "maxNs": 0
+                }
+              ],
+              "ProcessLatency": []
+            },
+            "parameterLimit": 32,
+            "truncatedParameters": [],
+            "clockQuantumVerified": false
+          }
+        }
+      ],
+      "nodeSnapshot": {
+        "nodeId": 78,
+        "state": "running",
+        "properties": {
+          "media.class": "Stream/Output/Video",
+          "node.driver": true,
+          "node.name": "gnome-shell",
+          "node.want-driver": true,
+          "object.serial": 105
+        },
+        "parameters": {
+          "EnumFormat": [
+            {
+              "mediaType": "video",
+              "mediaSubtype": "raw",
+              "format": "BGRx",
+              "modifier": {
+                "default": 0,
+                "alt1": 0,
+                "alt2": 72057594037927940,
+                "alt3": 72057594037927940,
+                "alt4": 72057594037927940
+              },
+              "framerate": {
+                "num": 0,
+                "denom": 1
+              },
+              "maxFramerate": {
+                "default": {
+                  "num": 15729567,
+                  "denom": 262144
+                },
+                "min": {
+                  "num": 1,
+                  "denom": 1
+                },
+                "max": {
+                  "num": 15729567,
+                  "denom": 262144
+                }
+              },
+              "size": {
+                "default": {
+                  "width": 1920,
+                  "height": 1080
+                },
+                "min": {
+                  "width": 1920,
+                  "height": 1080
+                },
+                "max": {
+                  "width": 1920,
+                  "height": 1080
+                }
+              },
+              "colorPrimaries": "bt709",
+              "transferFunction": "gamma22"
+            },
+            {
+              "mediaType": "video",
+              "mediaSubtype": "raw",
+              "format": "BGRA",
+              "modifier": {
+                "default": 0,
+                "alt1": 0,
+                "alt2": 72057594037927940,
+                "alt3": 72057594037927940,
+                "alt4": 72057594037927940
+              },
+              "framerate": {
+                "num": 0,
+                "denom": 1
+              },
+              "maxFramerate": {
+                "default": {
+                  "num": 15729567,
+                  "denom": 262144
+                },
+                "min": {
+                  "num": 1,
+                  "denom": 1
+                },
+                "max": {
+                  "num": 15729567,
+                  "denom": 262144
+                }
+              },
+              "size": {
+                "default": {
+                  "width": 1920,
+                  "height": 1080
+                },
+                "min": {
+                  "width": 1920,
+                  "height": 1080
+                },
+                "max": {
+                  "width": 1920,
+                  "height": 1080
+                }
+              },
+              "colorPrimaries": "bt709",
+              "transferFunction": "gamma22"
+            },
+            {
+              "mediaType": "video",
+              "mediaSubtype": "raw",
+              "format": "BGRx",
+              "framerate": {
+                "num": 0,
+                "denom": 1
+              },
+              "maxFramerate": {
+                "default": {
+                  "num": 15729567,
+                  "denom": 262144
+                },
+                "min": {
+                  "num": 1,
+                  "denom": 1
+                },
+                "max": {
+                  "num": 15729567,
+                  "denom": 262144
+                }
+              },
+              "size": {
+                "default": {
+                  "width": 1920,
+                  "height": 1080
+                },
+                "min": {
+                  "width": 1920,
+                  "height": 1080
+                },
+                "max": {
+                  "width": 1920,
+                  "height": 1080
+                }
+              },
+              "colorPrimaries": "bt709",
+              "transferFunction": "gamma22"
+            },
+            {
+              "mediaType": "video",
+              "mediaSubtype": "raw",
+              "format": "BGRA",
+              "framerate": {
+                "num": 0,
+                "denom": 1
+              },
+              "maxFramerate": {
+                "default": {
+                  "num": 15729567,
+                  "denom": 262144
+                },
+                "min": {
+                  "num": 1,
+                  "denom": 1
+                },
+                "max": {
+                  "num": 15729567,
+                  "denom": 262144
+                }
+              },
+              "size": {
+                "default": {
+                  "width": 1920,
+                  "height": 1080
+                },
+                "min": {
+                  "width": 1920,
+                  "height": 1080
+                },
+                "max": {
+                  "width": 1920,
+                  "height": 1080
+                }
+              },
+              "colorPrimaries": "bt709",
+              "transferFunction": "gamma22"
+            }
+          ],
+          "Format": [
+            {
+              "mediaType": "video",
+              "mediaSubtype": "raw",
+              "format": "BGRx",
+              "framerate": {
+                "num": 0,
+                "denom": 1
+              },
+              "maxFramerate": {
+                "num": 60,
+                "denom": 1
+              },
+              "size": {
+                "width": 1920,
+                "height": 1080
+              },
+              "colorPrimaries": "bt709",
+              "transferFunction": "gamma22"
+            }
+          ],
+          "Latency": [
+            {
+              "direction": "Input",
+              "minQuantum": 0,
+              "maxQuantum": 0,
+              "minRate": 0,
+              "maxRate": 0,
+              "minNs": 0,
+              "maxNs": 0
+            }
+          ],
+          "ProcessLatency": []
+        },
+        "parameterLimit": 32,
+        "truncatedParameters": [],
+        "clockQuantumVerified": false
+      },
+      "validControl": true,
+      "exclusionReason": null
+    }
+  },
+  "requestedControl": "cpu",
+  "nvencReady": false,
+  "webRtcStatus": "pending",
+  "change": null,
+  "reason": "Baseline does not support a pool-size experiment; inspect source/compositor evidence.",
+  "sourceAfter": {
+    "pid": 14900,
+    "alive": true,
+    "openDrmDevices": [],
+    "gpuDeviceNodes": [
+      "/dev/dri/renderD129",
+      "/dev/nvidia-modeset",
+      "/dev/nvidia0",
+      "/dev/nvidiactl"
+    ],
+    "rendererBackend": "NVIDIA GeForce RTX 3050 6GB Laptop GPU/PCIe/SSE2",
+    "gpuIdentityVerified": false,
+    "presentedFeedback": 3362,
+    "distinctPresentationTimestamps": 3362,
+    "presentationSpanSeconds": 56.113554,
+    "presentationFps": 59.896402213269184,
+    "discardedPresentationFeedback": 0,
+    "ffplayDroppedFrames": null,
+    "invalidPresentationFeedback": 0,
+    "presentationVerified": true,
+    "distinctFrameContentVerified": false
+  },
+  "date": "2026-10-05",
+  "displayBaseline": {
+    "mode": "1920x1080@60.004",
+    "refreshHz": 60.003536224365234,
+    "scale": 1,
+    "vrr": false
+  },
+  "interpretation": "CPU monitor delivery stalled after five frames while the source kept presenting near 60 FPS. All three snapshots showed the same running node/object serial. Exact stall cause remains unproven.",
+  "sourceTraceFlags": {
+    "scope": "Entire source trace, including portal selection; not exactly capture-aligned",
+    "presented": 3366,
+    "zeroCopyPresented": 3166,
+    "flagsHistogram": {
+      "7": 200,
+      "15": 3166
+    }
+  },
+  "rawLogs": "build/ci-foundation-check/monitor-cpu-series-20261005"
+}

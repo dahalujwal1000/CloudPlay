@@ -9,6 +9,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/src/index.js",
+    "identity:provision": "node dist/src/identity-cli.js provision",
+    "identity:inspect": "node dist/src/identity-cli.js inspect",
     "test": "npm run build && node --test dist/test/*.test.js",
     "lint": "eslint .",
     "format": "prettier --write src test *.json *.js",

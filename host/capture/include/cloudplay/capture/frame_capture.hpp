@@ -21,6 +21,7 @@ enum class FrameCaptureFailure {
     Consumer
 };
 enum class FrameStorage { DmaBuf, D3D11, CpuMemory };
+enum class CaptureSource : std::uint32_t { Monitor = 1, Window = 2, Any = 3 };
 
 struct CaptureOptions {
     std::uint32_t width{1920};
@@ -29,6 +30,11 @@ struct CaptureOptions {
     bool capture_diagnostics{};
     bool cpu_capture{}; // Linux diagnostic path only; never performance acceptance.
     bool embedded_cursor{};
+    bool fixed_rate{}; // Linux negotiation experiment; default range remains unchanged.
+    bool timing_diagnostics{};
+    std::uint32_t buffer_pool_size{4}; // Linux diagnostic experiment; range stays 2..8.
+    CaptureSource source{CaptureSource::Any};
+    std::uint32_t diagnostic_max_fps{60}; // Linux probe only; not the delivery target.
 };
 
 struct DmaBufPlane {
@@ -76,6 +82,15 @@ struct FrameCaptureMetrics {
     std::uint64_t delivered{};
     std::uint64_t discarded{};
     std::uint64_t sequence_gaps{};
+    std::uint64_t dequeue_batches{};
+    std::uint64_t multi_dequeue_batches{};
+    std::uint64_t max_dequeue_batch{};
+    std::uint64_t max_outstanding_buffers{};
+    std::uint32_t buffer_pool_size{};
+    std::uint32_t max_buffer_pool_size{};
+    std::uint32_t requested_buffer_pool_size{};
+    std::uint32_t requested_min_buffer_pool_size{};
+    std::uint32_t requested_max_buffer_pool_size{};
     std::uint64_t gpu_imports{};
     std::uint64_t cpu_frames{};
     std::uint64_t latency_samples{};
@@ -92,7 +107,13 @@ struct FrameCaptureMetrics {
     double max_gpu_import_time_ms{};
     double negotiated_fps{};
     double negotiated_max_fps{};
+    std::uint32_t source_type{}; // Portal metadata; zero means not provided.
+    std::uint32_t source_node{};
     int native_error{};
+    std::uint32_t error_object{};
+    int error_sequence{}, stream_state{};
+    std::array<char, 256> backend_error{}; // Bounded PipeWire diagnostic; no owned resources.
+    bool backend_error_truncated{};
     std::uint32_t width{};
     std::uint32_t height{};
     std::uint32_t drm_format{};

@@ -33,7 +33,7 @@ class ContextScope final {
 };
 
 GVariant *options(const std::string &token, bool create = false, bool select = false,
-                  bool embedded_cursor = false) {
+                  bool embedded_cursor = false, CaptureSource source = CaptureSource::Any) {
     GVariantBuilder builder;
     g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
     g_variant_builder_add(&builder, "{sv}", "handle_token", g_variant_new_string(token.c_str()));
@@ -41,7 +41,8 @@ GVariant *options(const std::string &token, bool create = false, bool select = f
         g_variant_builder_add(&builder, "{sv}", "session_handle_token",
                               g_variant_new_string(token.c_str()));
     if (select) {
-        g_variant_builder_add(&builder, "{sv}", "types", g_variant_new_uint32(3));
+        g_variant_builder_add(&builder, "{sv}", "types",
+                              g_variant_new_uint32(static_cast<std::uint32_t>(source)));
         g_variant_builder_add(&builder, "{sv}", "multiple", g_variant_new_boolean(false));
         if (embedded_cursor)
             g_variant_builder_add(&builder, "{sv}", "cursor_mode", g_variant_new_uint32(2));
@@ -116,7 +117,10 @@ GVariant *PortalSession::request(const char *method, GVariant *parameters,
     return g_variant_ref(response.results);
 }
 
-int PortalSession::open(bool embedded_cursor) {
+int PortalSession::open(bool embedded_cursor, CaptureSource source) {
+    if (source != CaptureSource::Any && source != CaptureSource::Monitor &&
+        source != CaptureSource::Window)
+        throw std::invalid_argument("Invalid portal source type");
     const auto *type = std::getenv("XDG_SESSION_TYPE");
     if (!type || std::string_view(type) != "wayland" || !std::getenv("DBUS_SESSION_BUS_ADDRESS"))
         throw FrameCaptureError(FrameCaptureFailure::SessionUnavailable);
@@ -136,6 +140,24 @@ int PortalSession::open(bool embedded_cursor) {
         throw FrameCaptureError(FrameCaptureFailure::SessionUnavailable);
     }
     sender_ = g_dbus_connection_get_unique_name(bus_);
+    if (source != CaptureSource::Any) {
+        auto *reply = g_dbus_connection_call_sync(
+            bus_, service, desktop, "org.freedesktop.DBus.Properties", "Get",
+            g_variant_new("(ss)", screen_cast, "AvailableSourceTypes"), G_VARIANT_TYPE("(v)"),
+            G_DBUS_CALL_FLAGS_NONE, 5000, nullptr, nullptr);
+        if (!reply)
+            throw FrameCaptureError(FrameCaptureFailure::Portal, "portal.source_types");
+        GVariant *value{};
+        g_variant_get(reply, "(v)", &value);
+        const bool supported =
+            g_variant_is_of_type(value, G_VARIANT_TYPE_UINT32) &&
+            (g_variant_get_uint32(value) & static_cast<std::uint32_t>(source)) != 0;
+        g_variant_unref(value);
+        g_variant_unref(reply);
+        if (!supported)
+            throw FrameCaptureError(FrameCaptureFailure::UnsupportedFormat,
+                                    "portal.requested_source_unavailable");
+    }
     if (embedded_cursor) {
         auto *reply = g_dbus_connection_call_sync(
             bus_, service, desktop, "org.freedesktop.DBus.Properties", "Get",
@@ -173,10 +195,10 @@ int PortalSession::open(bool embedded_cursor) {
            GVariant *, gpointer data) { static_cast<PortalSession *>(data)->closed_ = true; },
         this, nullptr);
     handle = token();
-    auto *selected = request(
-        "SelectSources",
-        g_variant_new("(o@a{sv})", session_.c_str(), options(handle, false, true, embedded_cursor)),
-        handle);
+    auto *selected = request("SelectSources",
+                             g_variant_new("(o@a{sv})", session_.c_str(),
+                                           options(handle, false, true, embedded_cursor, source)),
+                             handle);
     g_variant_unref(selected);
     handle = token();
     auto *started = request(
@@ -190,11 +212,18 @@ int PortalSession::open(bool embedded_cursor) {
     }
     GVariant *properties{};
     g_variant_get_child(streams, 0, "(u@a{sv})", &node_, &properties);
+    g_variant_lookup(properties, "source_type", "u", &source_type_);
+    const bool source_matches =
+        source_type_ == 0 || ((source_type_ == 1 || source_type_ == 2) &&
+                              (source_type_ & static_cast<std::uint32_t>(source)) != 0);
     guint64 serial{};
     if (g_variant_lookup(properties, "pipewire-serial", "t", &serial))
         serial_ = std::to_string(serial);
     g_variant_unref(properties);
     g_variant_unref(streams);
+    if (!source_matches)
+        throw FrameCaptureError(FrameCaptureFailure::UnsupportedFormat,
+                                "portal.unexpected_source_type");
     GUnixFDList *fds{};
     auto *remote = g_dbus_connection_call_with_unix_fd_list_sync(
         bus_, service, desktop, screen_cast, "OpenPipeWireRemote",
