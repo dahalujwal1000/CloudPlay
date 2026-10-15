@@ -49,6 +49,31 @@ void log_timings(const cloudplay::capture::PipeWireCapture &capture) {
         std::cout << "]}";
     }
     std::cout << "}}\n";
+    const auto &trace = capture.pacing_trace();
+    std::cout << "{\"event\":\"capture.pacing\",\"version\":1,\"clock\":\"CLOCK_MONOTONIC\","
+                 "\"scope\":\"selectedBuffersBeforeImport\",\"capacity\":"
+              << cloudplay::capture::CapturePacingTrace::capacity
+              << ",\"observed\":" << trace.observed() << ",\"overflow\":" << trace.overflow()
+              << ",\"samples\":[";
+    bool first = true;
+    for (const auto &sample : trace.samples()) {
+        if (!first)
+            std::cout << ',';
+        first = false;
+        std::cout << "{\"arrivalNs\":" << sample.arrival_ns << ",\"producerPtsNs\":";
+        if (sample.producer_pts_ns)
+            std::cout << *sample.producer_pts_ns;
+        else
+            std::cout << "null";
+        std::cout << ",\"sequence\":";
+        if (sample.sequence)
+            std::cout << *sample.sequence;
+        else
+            std::cout << "null";
+        std::cout << ",\"discontinuity\":" << (sample.discontinuity ? "true" : "false")
+                  << ",\"corrupted\":" << (sample.corrupted ? "true" : "false") << '}';
+    }
+    std::cout << "]}\n";
 }
 } // namespace
 

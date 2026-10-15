@@ -81,6 +81,10 @@ are saved. The existing helper understands the generated presentation trace.
 Its `validControl` means capture completed with balanced buffer ownership, not
 that FPS acceptance or pixel correctness passed. Source evidence covers the
 probe launch/portal/capture span, not precisely the first-to-last capture interval.
+Newly built probes also emit the bounded [pacing trace](linux-capture.md#bounded-pacing-trace)
+after stopping. The helper includes its paired producer/arrival interval analysis
+under each run's `pacing` field. This adds timing evidence without capturing pixels
+or changing the source or display mode.
 Window comparison uses the capture probe's existing `--source window` option.
 The helper also accepts `--source-target window --snapshot-node` to run both
 window controls and collect each source node's live parameters at startup,

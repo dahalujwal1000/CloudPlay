@@ -60,6 +60,7 @@ struct PipeWireCapture::Impl {
     std::optional<std::uint64_t> last_sequence;
     PresentationTiming presentation_timing;
     std::array<TimingSamples, 9> timings;
+    CapturePacingTrace pacing;
     std::optional<std::chrono::steady_clock::time_point> last_arrival, last_poll;
     std::chrono::steady_clock::time_point deadline;
 
@@ -286,6 +287,17 @@ struct PipeWireCapture::Impl {
         frame.storage = options.cpu_capture ? FrameStorage::CpuMemory : FrameStorage::DmaBuf;
         const auto *header = static_cast<spa_meta_header *>(
             spa_buffer_find_meta_data(buffer, SPA_META_Header, sizeof(spa_meta_header)));
+        if (options.timing_diagnostics) {
+            CapturePacingSample sample;
+            sample.arrival_ns = arrival_ns;
+            if (header) {
+                sample.producer_pts_ns = header->pts;
+                sample.sequence = header->seq;
+                sample.discontinuity = (header->flags & SPA_META_HEADER_FLAG_DISCONT) != 0;
+                sample.corrupted = (header->flags & SPA_META_HEADER_FLAG_CORRUPTED) != 0;
+            }
+            pacing.observe(sample);
+        }
         if (header) {
             if (header->flags & SPA_META_HEADER_FLAG_CORRUPTED) {
                 ++metrics.discarded;
@@ -453,14 +465,17 @@ void PipeWireCapture::start(const CaptureOptions &options) {
     self.last_sequence.reset();
     self.presentation_timing = {};
     self.timings = {};
+    self.pacing = {};
     self.last_arrival.reset();
     self.last_poll.reset();
-    if (options.timing_diagnostics)
+    if (options.timing_diagnostics) {
+        self.pacing.prepare();
         for (std::size_t i = 0; i < self.timings.size(); ++i) {
             self.timings[i] = TimingSamples(
                 i == static_cast<std::size_t>(CaptureTimingStage::Poll) ? 131072 : 8192);
             self.timings[i].prepare();
         }
+    }
     self.consumer_error = {};
     self.state = FrameCaptureState::Starting;
     try {
@@ -649,5 +664,9 @@ std::array<TimingSummary, 9> PipeWireCapture::timing_summary() const {
     for (std::size_t i = 0; i < result.size(); ++i)
         result[i] = impl_->timings[i].summary();
     return result;
+}
+const CapturePacingTrace &PipeWireCapture::pacing_trace() const {
+    impl_->check();
+    return impl_->pacing;
 }
 } // namespace cloudplay::capture

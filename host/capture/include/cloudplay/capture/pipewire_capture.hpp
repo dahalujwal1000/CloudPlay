@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cloudplay/capture/capture_pacing.hpp>
 #include <cloudplay/capture/capture_timing.hpp>
 #include <cloudplay/capture/frame_capture.hpp>
 #include <memory>
@@ -18,6 +19,8 @@ class PipeWireCapture final : public IFrameCapture {
     [[nodiscard]] FrameCaptureState state() const override;
     [[nodiscard]] FrameCaptureMetrics metrics() const override;
     [[nodiscard]] std::array<TimingSummary, 9> timing_summary() const;
+    // Borrowed owner-thread view, valid until start() or destruction; available after stop().
+    [[nodiscard]] const CapturePacingTrace &pacing_trace() const;
 
   private:
     struct Impl;

@@ -1,5 +1,85 @@
 # Fedora GNOME/Wayland Capture
 
+## Bounded Pacing Trace
+
+`--timing-diagnostics` now retains up to 8192 selected-buffer metadata samples
+and emits one `capture.pacing` JSON event after capture stops. Each sample holds
+the arrival time from `CLOCK_MONOTONIC`, raw producer PTS and sequence (or null
+when no SPA header exists), plus discontinuity/corruption flags. Sampling occurs
+after bounded dequeue selection and before fence wait/import; it is not a trace
+of every dequeued buffer or a guarantee that each sampled buffer was delivered.
+No pixels, descriptors, credentials or buffer references are retained. All access
+remains on the capture owner thread; storage is reserved before portal startup,
+and the callback does not allocate or write this trace to stdout. Restart clears
+the trace; `observed` and `overflow` expose omitted samples when the prefix fills.
+Normal capture without timing diagnostics does not collect pacing samples.
+
+The existing isolation runner automatically adds a `pacing` analysis to each run
+in `report.json`, while retaining the raw trace in the probe JSONL. It compares
+producer and arrival intervals for the same adjacent selected buffers and reports
+signed arrival-minus-producer interval changes and presentation age in milliseconds.
+Missing/invalid timestamps, corrupted buffers and discontinuities break interval
+pairs; timestamp/sequence regressions exclude the affected pair. Counts and prefix
+truncation are explicit. Malformed/unsupported trace envelopes report
+`invalid_trace`; older logs without this event report `unavailable`.
+
+Similar slow producer/arrival intervals motivate upstream pacing investigation;
+larger arrival jitter with steadier producer intervals motivates investigating
+delivery/poll scheduling. Neither observation identifies a compositor defect.
+Presentation age assumes comparable clocks and is not capture-origin latency;
+source feedback is still measured separately over the probe/portal span. The
+analysis cannot see compositor frames that never reached the client or identify
+which source presentation generated a particular buffer. It does not change the
+60 FPS acceptance gate, negotiation, buffer policy, display settings or media gates.
+
+Build and run the controls in [Wayland motion source](wayland-motion-source.md),
+using the newly built probe. Live capture requires explicit portal selection.
+Automated trace/analysis tests do not establish a fresh hardware FPS result.
+
+## Live Pacing Result: 2026-10-15
+
+The user explicitly authorized a new 30-second monitor capture and selected the
+source in the portal. The composited native animation used the existing
+`build/ci-foundation-check` motion executable, whose CLI supports composition
+control; the older `build/wayland-motion` executable does not. The capture probe
+was freshly built in `build/capture-pacing`. No display, driver or system settings
+were changed, and no screenshots or video were saved.
+
+| Measurement | Result |
+| --- | ---: |
+| Capture | 38.232 FPS over 30.0011 seconds |
+| Source presentation over probe/portal span | 59.7997 FPS |
+| Received / delivered / returned | 1147 / 1147 / 1147 |
+| Local discards / sequence gaps / outstanding buffers | 0 / 0 / 0 |
+| Producer interval mean / p50 / p99 | 26.1766 / 33.323 / 33.340 ms |
+| Arrival interval mean / p50 / p99 | 26.1716 / 32.5605 / 34.4332 ms |
+| Fence wait / held p99 | 6.62249 / 6.88956 ms |
+| EGL import p99 | 0.320924 ms |
+
+All 1147 pacing samples were retained, with 1146 valid interval pairs, no missing
+or invalid metadata, and no discontinuities/corruption. Producer and arrival
+cadence are similarly slow; this points toward producer/compositor pacing rather
+than local buffer dropping, but does not prove a root cause. Every PTS was ahead
+of arrival (mean signed age -10.7414 ms); do not interpret it as capture latency.
+
+Installed Mutter/GNOME Shell are 50.0-1.fc44; PipeWire is 1.6.9-1.fc44.
+Upstream [Mutter 50 rate limiting](https://github.com/GNOME/mutter/blob/50.0/src/backends/meta-screen-cast-stream-src.c)
+rejects attempts with timestamp intervals below the integer minimum implied by
+maxFramerate. An exploratory 16666-us greedy filter of actual source presentation
+timestamps inside the capture producer-PTS span retains 1147 of 1795 presentations,
+predicting 38.2234 FPS. Those presentation timestamps are not compositor capture
+attempt timestamps; agreement is evidence for investigating this rate check, not
+proof of the exact cause or a validated production workaround. No rate limiter
+was changed. Next obtain compositor-side attempt/skip timing before proposing a
+system change; any compositor installation/restart needs user authorization.
+
+Capture completed normally and all diagnostic processes were stopped. The source
+was intentionally terminated afterward, so its final summary has completed=false
+and one unresolved feedback; it is not a completed source-only acceptance run.
+Pixel correctness was not rechecked, and the 1080p60/NVENC/WebRTC gates remain unmet.
+See [sanitized evidence](linux-capture-pacing-2026-10-15.json); raw timing artifacts
+remain private under ignored `build/capture-pacing/live-lko1x1tv/`.
+
 ## Refresh Investigation: 2026-10-06
 
 All runs used the composited NVIDIA motion reference and requested 1920x1080/60.

@@ -3,6 +3,7 @@
 
 import argparse
 import json
+import math
 from pathlib import Path
 import re
 import subprocess
@@ -166,6 +167,133 @@ def source_evidence(pid, log, offset=0, proc_root=Path("/proc")):
     }
 
 
+def pacing_evidence(trace):
+    """Compare adjacent selected-buffer timestamps without asserting a root cause."""
+    if trace is None:
+        return {"status": "unavailable"}
+    if not isinstance(trace, dict):
+        return {"status": "invalid_trace"}
+    samples = trace.get("samples")
+    observed, overflow = trace.get("observed"), trace.get("overflow")
+    if (
+        type(trace.get("version")) is not int
+        or trace["version"] != 1
+        or trace.get("clock") != "CLOCK_MONOTONIC"
+        or trace.get("scope") != "selectedBuffersBeforeImport"
+        or type(trace.get("capacity")) is not int
+        or trace["capacity"] != 8192
+        or not isinstance(samples, list)
+        or len(samples) > 8192
+        or type(observed) is not int
+        or type(overflow) is not int
+        or overflow < 0
+        or observed != len(samples) + overflow
+        or (overflow > 0 and len(samples) != 8192)
+    ):
+        return {"status": "invalid_trace"}
+
+    def integer(value, minimum, maximum):
+        return type(value) is int and minimum <= value <= maximum
+
+    producer, arrival, difference, ages = [], [], [], []
+    invalid, missing, discontinuities, corrupted, sequence_gaps = 0, 0, 0, 0, 0
+    previous = None
+    for sample in samples:
+        if (
+            not isinstance(sample, dict)
+            or not integer(sample.get("arrivalNs"), 1, (1 << 63) - 1)
+            or type(sample.get("discontinuity")) is not bool
+            or type(sample.get("corrupted")) is not bool
+            or "producerPtsNs" not in sample
+            or "sequence" not in sample
+            or (
+                sample["sequence"] is not None
+                and not integer(sample["sequence"], 0, (1 << 64) - 1)
+            )
+        ):
+            invalid += 1
+            previous = None
+            continue
+        discontinuities += sample["discontinuity"]
+        corrupted += sample["corrupted"]
+        pts, now = sample["producerPtsNs"], sample["arrivalNs"]
+        if pts is None:
+            missing += 1
+            previous = None
+            continue
+        if (
+            not integer(pts, 1, (1 << 63) - 1)
+            or abs(now - pts) >= 10_000_000_000
+        ):
+            invalid += 1
+            previous = None
+            continue
+        if sample["corrupted"]:
+            previous = None
+            continue
+        ages.append((now - pts) / 1e6)
+        if previous is not None and not sample["discontinuity"]:
+            producer_delta = pts - previous["producerPtsNs"]
+            arrival_delta = now - previous["arrivalNs"]
+            before, after = previous["sequence"], sample["sequence"]
+            sequence_forward = (
+                before is None or after is None or after > before
+            )
+            if (
+                0 < producer_delta < 10_000_000_000
+                and 0 < arrival_delta < 10_000_000_000
+                and sequence_forward
+            ):
+                producer.append(producer_delta / 1e6)
+                arrival.append(arrival_delta / 1e6)
+                difference.append((arrival_delta - producer_delta) / 1e6)
+                if before is not None and after is not None:
+                    sequence_gaps += after - before - 1
+        previous = sample
+
+    def distribution(values):
+        if not values:
+            return {"count": 0}
+        ordered = sorted(values)
+        return {
+            "count": len(values),
+            "mean": sum(values) / len(values),
+            "min": ordered[0],
+            "max": ordered[-1],
+            **{
+                name: ordered[math.ceil(fraction * len(values)) - 1]
+                for name, fraction in (
+                    ("p50", 0.5),
+                    ("p95", 0.95),
+                    ("p99", 0.99),
+                )
+            },
+        }
+
+    return {
+        "status": "analyzed",
+        "scope": trace["scope"],
+        "sampled": len(samples),
+        "observed": observed,
+        "overflow": overflow,
+        "truncated": overflow > 0,
+        "validPairs": len(producer),
+        "excludedPairs": max(0, len(samples) - 1) - len(producer),
+        "invalidSamples": invalid,
+        "missingProducerTimestamps": missing,
+        "discontinuities": discontinuities,
+        "corruptedSamples": corrupted,
+        "sequenceGapsWithinValidPairs": sequence_gaps,
+        "unit": "ms",
+        "producerInterval": distribution(producer),
+        "arrivalInterval": distribution(arrival),
+        "arrivalMinusProducerInterval": distribution(difference),
+        "signedPresentationAge": distribution(ages),
+        "captureOriginLatencyVerified": False,
+        "rootCauseVerified": False,
+    }
+
+
 def read_capture(path, stderr_path=None):
     events = []
     for file in (path, stderr_path):
@@ -197,6 +325,16 @@ def read_capture(path, stderr_path=None):
     return {
         "summary": summary,
         "timings": timings,
+        "pacing": pacing_evidence(
+            next(
+                (
+                    event
+                    for event in events
+                    if event.get("event") == "capture.pacing"
+                ),
+                None,
+            )
+        ),
         "failure": failure,
         "format": next(
             (

@@ -24,6 +24,178 @@ nodes = importlib.util.module_from_spec(node_spec)
 node_spec.loader.exec_module(nodes)
 
 
+class PacingTests(unittest.TestCase):
+    @staticmethod
+    def sample(arrival, pts, sequence, **flags):
+        return {
+            "arrivalNs": arrival,
+            "producerPtsNs": pts,
+            "sequence": sequence,
+            "discontinuity": False,
+            "corrupted": False,
+            **flags,
+        }
+
+    @staticmethod
+    def trace(samples, overflow=0):
+        return {
+            "event": "capture.pacing",
+            "version": 1,
+            "clock": "CLOCK_MONOTONIC",
+            "scope": "selectedBuffersBeforeImport",
+            "capacity": 8192,
+            "observed": len(samples) + overflow,
+            "overflow": overflow,
+            "samples": samples,
+        }
+
+    def test_distinguishes_producer_intervals_from_arrival_jitter(self):
+        samples = [
+            self.sample(1_001_000_000, 1_000_000_000, 0),
+            self.sample(1_037_000_000, 1_016_000_000, 1),
+            self.sample(1_038_000_000, 1_032_000_000, 2),
+        ]
+        result = isolation.pacing_evidence(self.trace(samples))
+        self.assertEqual(result["validPairs"], 2)
+        self.assertEqual(result["excludedPairs"], 0)
+        self.assertEqual(result["producerInterval"]["p99"], 16)
+        self.assertEqual(result["arrivalInterval"]["max"], 36)
+        self.assertEqual(result["arrivalMinusProducerInterval"]["min"], -15)
+        self.assertEqual(result["arrivalMinusProducerInterval"]["max"], 20)
+        self.assertFalse(result["rootCauseVerified"])
+        self.assertFalse(result["captureOriginLatencyVerified"])
+
+    def test_slow_producer_is_visible_without_claiming_sequence_loss(self):
+        samples = [
+            self.sample(
+                1_001_000_000 + i * 33_333_333,
+                1_000_000_000 + i * 33_333_333,
+                i,
+            )
+            for i in range(4)
+        ]
+        result = isolation.pacing_evidence(self.trace(samples))
+        self.assertAlmostEqual(result["producerInterval"]["mean"], 33.333333)
+        self.assertEqual(result["arrivalMinusProducerInterval"]["max"], 0)
+        self.assertEqual(result["sequenceGapsWithinValidPairs"], 0)
+
+    def test_missing_corrupted_and_discontinuous_samples_break_pairs(self):
+        samples = [
+            self.sample(1_001_000_000, 1_000_000_000, 1),
+            self.sample(1_017_000_000, None, None),
+            self.sample(1_033_000_000, 1_032_000_000, 3),
+            self.sample(1_049_000_000, 1_048_000_000, 4, corrupted=True),
+            self.sample(1_065_000_000, 1_064_000_000, 5),
+            self.sample(1_081_000_000, 1_080_000_000, 0, discontinuity=True),
+            self.sample(1_097_000_000, 1_096_000_000, 2),
+        ]
+        result = isolation.pacing_evidence(self.trace(samples))
+        self.assertEqual(result["validPairs"], 1)
+        self.assertEqual(result["excludedPairs"], 5)
+        self.assertEqual(result["missingProducerTimestamps"], 1)
+        self.assertEqual(result["corruptedSamples"], 1)
+        self.assertEqual(result["discontinuities"], 1)
+        self.assertEqual(result["sequenceGapsWithinValidPairs"], 1)
+
+    def test_invalid_timestamps_and_metadata_do_not_bridge_intervals(self):
+        for field, value in (
+            ("arrivalNs", True),
+            ("arrivalNs", 0),
+            ("arrivalNs", 1 << 63),
+            ("producerPtsNs", -(1 << 63)),
+            ("producerPtsNs", True),
+            ("producerPtsNs", 20_000_000_000),
+            ("sequence", True),
+            ("sequence", 1 << 64),
+            ("discontinuity", 1),
+            ("corrupted", None),
+        ):
+            with self.subTest(field=field, value=value):
+                samples = [
+                    self.sample(
+                        1_001_000_000 + i * 16_000_000,
+                        1_000_000_000 + i * 16_000_000,
+                        i,
+                    )
+                    for i in range(3)
+                ]
+                samples[1][field] = value
+                result = isolation.pacing_evidence(self.trace(samples))
+                self.assertEqual(result["invalidSamples"], 1)
+                self.assertEqual(result["validPairs"], 0)
+                self.assertEqual(result["excludedPairs"], 2)
+
+    def test_timestamp_and_sequence_regressions_exclude_the_pair(self):
+        first = self.sample(1_001_000_000, 1_000_000_000, 10)
+        for second in (
+            self.sample(1_017_000_000, 1_000_000_000, 11),
+            self.sample(1_017_000_000, 999_000_000, 11),
+            self.sample(1_001_000_000, 1_016_000_000, 11),
+            self.sample(1_000_000_000, 1_016_000_000, 11),
+            self.sample(1_017_000_000, 1_016_000_000, 10),
+            self.sample(1_017_000_000, 1_016_000_000, 0),
+        ):
+            result = isolation.pacing_evidence(self.trace([first, second]))
+            self.assertEqual(result["validPairs"], 0)
+            self.assertEqual(result["excludedPairs"], 1)
+        future = isolation.pacing_evidence(
+            self.trace([self.sample(1_000_000_000, 1_001_000_000, 0)])
+        )
+        self.assertEqual(future["signedPresentationAge"]["min"], -1)
+
+    def test_empty_missing_malformed_and_truncated_trace(self):
+        self.assertEqual(
+            isolation.pacing_evidence(None)["status"], "unavailable"
+        )
+        empty = isolation.pacing_evidence(self.trace([]))
+        self.assertEqual(empty["validPairs"], 0)
+        self.assertEqual(empty["producerInterval"], {"count": 0})
+        self.assertFalse(empty["truncated"])
+        for field, value in (
+            ("version", True),
+            ("version", 2),
+            ("capacity", 16384),
+            ("observed", True),
+            ("observed", 1),
+            ("overflow", -1),
+            ("clock", "unknown"),
+            ("samples", [None] * 8193),
+        ):
+            trace = self.trace([])
+            trace[field] = value
+            self.assertEqual(
+                isolation.pacing_evidence(trace)["status"], "invalid_trace"
+            )
+        self.assertEqual(
+            isolation.pacing_evidence([])["status"], "invalid_trace"
+        )
+        malformed = isolation.pacing_evidence(self.trace([None, {}, 1]))
+        self.assertEqual(malformed["invalidSamples"], 3)
+        self.assertEqual(malformed["excludedPairs"], 2)
+        samples = [
+            self.sample(
+                1_001_000_000 + i * 16_000_000,
+                1_000_000_000 + i * 16_000_000,
+                i,
+            )
+            for i in range(8192)
+        ]
+        truncated = isolation.pacing_evidence(self.trace(samples, overflow=17))
+        self.assertTrue(truncated["truncated"])
+        self.assertEqual(truncated["validPairs"], 8191)
+        self.assertEqual(truncated["observed"], 8209)
+
+    def test_read_capture_analyzes_pacing_event(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "capture.jsonl"
+            path.write_text(
+                json.dumps(self.trace([self.sample(100, 90, 0)])) + "\n"
+            )
+            result = isolation.read_capture(path)["pacing"]
+            self.assertEqual(result["status"], "analyzed")
+            self.assertEqual(result["sampled"], 1)
+
+
 class IsolationTests(unittest.TestCase):
     def test_node_snapshot_cli_private_output_and_no_overwrite(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -40,6 +40,16 @@ encoder and WebRTC integration gates remain unchanged. See
 [ceiling evidence](testing/linux-capture-ceiling-2026-10-07.json) and
 [presentation controls](testing/wayland-motion-source.md).
 
+The timing diagnostic now includes a bounded selected-buffer timestamp trace and
+paired producer/arrival analysis in isolation reports. A user-authorized live run
+on 2026-10-15 delivered 38.232 FPS against source presentation near 59.80 FPS,
+with 1147 balanced buffers and no local drops/gaps. The trace retained all samples:
+producer p50 33.323 ms closely tracks arrivals. An exploratory presentation-time
+rate filter predicts a similar rate but does not prove the compositor cause.
+Next trace compositor capture-attempt/skip timing before proposing system changes;
+the acceptance and media gates remain unchanged. See
+[trace semantics and live evidence](testing/linux-capture.md#live-pacing-result-2026-10-15).
+
 ## TASK-003 NVENC
 Implement H.264 hardware encoding and benchmark.
 
@@ -102,11 +112,13 @@ Implement secure pairing and device identity.
 Implemented: expiring one-use challenges, rate limits, scoped ephemeral device
 tokens, revocation, Secret Service-backed server TLS identity provisioning, and
 Android manual certificate fingerprint confirmation with pinned HTTPS. Automated
-TLS/pairing checks pass. On 2026-10-07 the user verified real PC identity creation
-and HTTPS startup; phone enrollment failed with an authorization rejection.
-Next diagnose the rejected request and verify successful enrollment/status on the
-phone. Secure persistent device credentials, refresh/reconnect, rotation and a
-PC pairing UI remain pending. See [pairing validation](testing/android-pairing.md).
+TLS/pairing checks pass. On 2026-10-15 the user reported successful phone enrollment
+and supplied a screenshot of "Host authenticated", confirming the initial
+authenticated health check. This supersedes the rejected 2026-10-07 attempt;
+its original cause is not established. Repeated status refresh and the remaining
+phone lifecycle/trust checks are pending. Secure persistent device credentials,
+refresh/reconnect, rotation and a PC pairing UI remain pending.
+See [pairing validation](testing/android-pairing.md).
 
 ## TASK-010 Internet Connectivity
 Implement signaling, STUN, TURN and reconnect.

@@ -58,15 +58,24 @@ On a phone, verify form layout with the keyboard visible, correct and incorrect
 fingerprints, expired/wrong codes, status refresh, disconnect, and cancellation.
 Rotate the activity during a request and confirm no connection is restored.
 Verify that no administrator credentials are requested and no secrets appear in
-logs. Successful physical phone-to-host enrollment and complete UI checks remain
-unverified; no media acceptance gate has been passed by these pairing tests.
+logs. Basic physical phone-to-host enrollment and the initial authenticated
+health check are now user-verified; the remaining phone checks above are pending.
+No media acceptance gate has been passed by these pairing tests.
 
-## Live Status: 2026-10-07
+## Live Status: 2026-10-15
 
-The user completed real PC TLS identity provisioning and received the HTTPS
-listening message on port 8787. The phone pairing attempt reported authorization
-rejection. Successful enrollment and authenticated health checks are still
-unverified. Do not interpret server startup as proof of a working phone session.
+The user completed real PC TLS identity provisioning and private LAN HTTPS startup
+on port 8787, then reported successful phone enrollment and supplied a screenshot
+showing "Host authenticated". The app reaches that state only after redeeming the
+challenge and passing the initial authenticated health check. This verifies the
+basic manual pairing flow on the user's phone; repeated status refresh, expiry,
+disconnect, activity rotation, cancellation and incorrect-trust checks remain
+pending. No device model or complete phone acceptance suite is established.
+
+Earlier attempts returned authorization rejection, including the 2026-10-07
+attempt. A fresh challenge/code was used in the successful flow, but the original
+rejection cause was not isolated. No live codes, tokens or identity identifiers
+are recorded here. Server startup alone is not enrollment evidence.
 
 ## Terminal Troubleshooting
 

@@ -94,8 +94,10 @@ The APK is `android/app/build/outputs/apk/debug/app-debug.apk`. It displays a ho
 pairing form with independently confirmed certificate fingerprint, challenge ID,
 and one-use code. See [Android pairing validation](testing/android-pairing.md).
 No administrator bearer token is embedded or entered in the APK. Device tokens
-are memory-only. The app disables backups and cleartext networking. A physical
-device/emulator UI run and phone-to-host connection have not yet been verified.
+are memory-only. The app disables backups and cleartext networking. Physical
+phone enrollment and the initial authenticated health check were user-verified on
+2026-10-15, including a screenshot of "Host authenticated". The remaining phone UI
+and lifecycle checks are pending; see the pairing validation guide.
 
 ## Signaling
 

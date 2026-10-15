@@ -1,19 +1,42 @@
 # Coding Agent Handoff
 
-Last verified: 2026-10-07.
+Latest user-assisted verification: 2026-10-15. Earlier automated checkpoints
+below retain their original verification dates.
 
-Latest user-assisted connectivity status: PC identity provisioning succeeded
-against real Secret Service; user output confirms HTTPS listening on private LAN
-port 8787. The Android phone then reported authorization rejection. Do not mark
-phone enrollment or authenticated status as passed. Root cause is unconfirmed;
-next distinguish pairing-code rejection from post-pair health authorization,
-using fresh challenge/code and safe status-only diagnostics. No credentials,
-codes, private keys or live certificate identifiers are stored in this handoff.
-README, TASKS and Android/TLS setup guides now reflect this partial live result
-and common terminal-directory/environment mistakes. Earlier statements below
-about no real identity provisioning are historical, superseded by this update.
+The user reported successful Android phone enrollment and supplied a screenshot
+of "Host authenticated" after provisioning a real Secret Service TLS identity and
+starting private LAN HTTPS on port 8787. This UI state follows successful pairing
+and an authenticated health check, superseding the earlier rejected attempt.
+Its original rejection cause is not established. Repeated Check status, expiry,
+disconnect, rotation/cancellation and wrong-trust phone checks remain pending.
+No codes, tokens, private keys or live certificate identifiers are stored here.
+This does not establish media, input, persistent credentials or reconnect support.
+Earlier claims below that phone enrollment is unverified are historical.
 
-Latest capture work: added --diagnostic-max-fps 60..65, default 60, with range
+Latest capture implementation: added a bounded 8192-sample selected-buffer pacing
+trace under --timing-diagnostics and producer/arrival comparison in isolation
+reports. Scalars are copied before import, with no callback logging, buffer
+retention or policy changes. Discontinuities, missing/invalid metadata, corruption,
+regressions and prefix overflow are exposed rather than counted as valid pairs.
+See linux-capture.md for scope/clock limitations. Fresh build/capture-pacing enables
+Linux capture/input/games and NVIDIA readiness headers; all 46 CTests pass,
+including 25 Python capture-analysis tests. Changed C++ passes clang-format 18
+and GCC 16 -fanalyzer compilation; changed Python passes Black. No Windows or
+Wayland motion rebuild was performed. The user authorized a live monitor run:
+38.232 FPS capture versus 59.7997 FPS source over the probe/portal span, 1147
+balanced buffers, zero local discards/gaps. All pacing samples retained, with
+1146 valid pairs; producer interval p50 33.323 ms closely tracks slow arrivals.
+An exploratory 16666-us greedy filter of source presentation timestamps predicts
+38.2234 FPS, motivating compositor rate-check tracing, not proving the cause.
+Mutter 50.0-1.fc44; PipeWire 1.6.9-1.fc44. No system settings changed and no pixels
+were saved; all diagnostic processes stopped. Source was intentionally interrupted
+after capture, so its final incomplete summary is not source-only acceptance.
+Evidence: testing/linux-capture-pacing-2026-10-15.json. Capture acceptance still
+fails; NVENC/WebRTC gates remain unmet. Ask before any critical system change,
+including installing/restarting the compositor. Git autosync remains paused so
+unrelated local changes are not automatically published.
+
+Previous capture work: added --diagnostic-max-fps 60..65, default 60, with range
 negotiation only; nominal target remains 60. Non-default ceiling runs cannot
 report production acceptance. Added CLI, SPA parameter and option validation
 tests. Build and all 45 CTests pass, changed C++ passes clang-format 18 and
@@ -42,14 +65,16 @@ token on the phone. Cancel/disconnect and disposal forget credentials; an
 in-flight pairing response cannot restore a forgotten credential. Successful
 pairing requires an authenticated health check. No game/media controls were added.
 
-Android APK assembly, app/UI lint and Spotless checks pass. Networking JVM TLS
+Previous Android automated checkpoint: APK assembly, app/UI lint and Spotless
+checks passed. Networking JVM TLS
 tests cover success, pin/SAN rejection, input validation, rate limits, redirects,
 oversized responses, and in-flight forgetting. JDK 17 and SDK 36/build-tools 35
 are available under ignored .cache/android-tools and .cache/android-sdk locally.
-No physical Android device is connected; UI layout, platform TLS behavior and
-phone-to-host enrollment remain unverified. See docs/testing/android-pairing.md
-for installation/setup and limits. Next: verify on the phone, then add persistent
-device credential/reconnect handling with secure storage and lifecycle tests.
+At that checkpoint no physical Android device was connected. Phone enrollment
+and the initial authenticated health check are now user-verified as described
+above. Remaining phone trust/UI/lifecycle checks are pending. See
+docs/testing/android-pairing.md for setup and limits. Persistent device credentials
+and reconnect still require secure storage and lifecycle tests.
 Capture FPS acceptance remains blocked; no captured-frame NVENC/WebRTC integration.
 
 Earlier implementation history follows; pending Android trust/UI references

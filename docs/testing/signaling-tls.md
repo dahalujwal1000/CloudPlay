@@ -107,3 +107,9 @@ LAN IPv4 address using HTTPS port 8787. This verifies provisioning and startup,
 not successful phone enrollment. The phone reported authorization rejection;
 its exact request/status and cause are not yet established. Do not publish live
 pairing codes, administrator/device tokens, or private keys in diagnostic reports.
+
+2026-10-15 user-assisted validation: phone enrollment succeeded and the user
+supplied a screenshot of "Host authenticated", verifying the initial authenticated
+health check as well as pairing. This supersedes the earlier rejection result,
+whose cause was not isolated. Repeated phone status and lifecycle checks remain
+pending; media, input and reconnect have not been established.

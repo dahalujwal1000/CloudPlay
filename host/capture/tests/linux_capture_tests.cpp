@@ -10,6 +10,7 @@ int main() {
         throw std::runtime_error("Invalid initial state");
     bool wrong_thread_rejected{};
     bool timing_thread_rejected{};
+    bool pacing_thread_rejected{};
     std::thread other([&] {
         try {
             interface.stop();
@@ -21,9 +22,14 @@ int main() {
         } catch (const std::logic_error &) {
             timing_thread_rejected = true;
         }
+        try {
+            (void)capture.pacing_trace();
+        } catch (const std::logic_error &) {
+            pacing_thread_rejected = true;
+        }
     });
     other.join();
-    if (!wrong_thread_rejected || !timing_thread_rejected)
+    if (!wrong_thread_rejected || !timing_thread_rejected || !pacing_thread_rejected)
         throw std::runtime_error("Cross-thread shutdown/timing access permitted");
     try {
         interface.start({1280, 720, 60});
@@ -75,5 +81,8 @@ int main() {
         for (const auto &timing : capture.timing_summary())
             if (timing.count || timing.overflow)
                 throw std::runtime_error("Failed startup/restart retained timing data");
+        const auto &trace = capture.pacing_trace();
+        if (trace.observed() || trace.overflow() || !trace.samples().empty())
+            throw std::runtime_error("Failed startup/restart retained pacing data");
     }
 }

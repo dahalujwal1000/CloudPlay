@@ -57,13 +57,16 @@ cloud-gaming product is complete. Live sustained 1080p60 acceptance on a real
 desktop, captured-frame NVENC interoperability, WebRTC media transport, Android
 video, production credential persistence/recovery, and remote internet connectivity remain pending.
 
-As of 2026-10-07, Android has a certificate-pinned HTTPS pairing form and
-authenticated status checks. The user verified PC TLS identity provisioning and
-HTTPS startup; phone pairing returned an authorization rejection and successful
-enrollment is not yet verified. This UI cannot stream games. See
+As of 2026-10-15, the user verified phone enrollment and the initial authenticated
+health check: the APK displayed "Host authenticated", confirmed by a screenshot.
+This follows successful PC TLS identity provisioning and private LAN HTTPS startup.
+Repeated status checks, reconnect and the remaining phone UI checks are not yet
+verified. This UI cannot stream games. See
 [phone pairing setup and troubleshooting](docs/testing/android-pairing.md).
-Latest capture controls measured 38.20 FPS at the default ceiling and 40.80 FPS
-with an experimental ceiling, both below acceptance. No captured-frame
+Latest user-authorized capture measured 38.23 FPS against source presentation
+near 59.80 FPS; the bounded pacing trace points toward producer/compositor timing,
+without establishing a root cause. See [capture evidence](docs/testing/linux-capture.md#live-pacing-result-2026-10-15).
+The capture gate remains below acceptance. No captured-frame
 NVENC/WebRTC integration has been enabled.
 See [Linux NVIDIA setup](docs/testing/linux-nvenc.md), [capture checks](docs/testing/linux-capture.md),
 and the roadmap in [docs/TASKS.md](docs/TASKS.md).
